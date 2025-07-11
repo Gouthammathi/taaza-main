@@ -30,6 +30,7 @@ function Billing() {
   const [activeInput, setActiveInput] = useState(null);
   const [keypadStandalone, setKeypadStandalone] = useState(false);
   const [standaloneKeypadValue, setStandaloneKeypadValue] = useState('');
+  const [keypadType, setKeypadType] = useState('numeric');
 
   // Calculate totals
   const totalQty = currentBill.products.reduce((sum, p) => sum + Number(p.qty), 0);
@@ -62,6 +63,22 @@ function Billing() {
     };
     fetchQuickItems();
   }, []);
+
+  // Auto-close keypad on physical keyboard input
+  useEffect(() => {
+    if (!showKeypad || keypadStandalone) return;
+    function handleKeydown(e) {
+      // Ignore if the event is triggered by the virtual keypad (e.isTrusted is always true, but we can check target)
+      // We'll close the keypad for any key press except Tab (to allow navigation)
+      if (e.key !== 'Tab') {
+        setShowKeypad(false);
+        setActiveInput(null);
+        setKeypadStandalone(false);
+      }
+    }
+    document.addEventListener('keydown', handleKeydown);
+    return () => document.removeEventListener('keydown', handleKeydown);
+  }, [showKeypad, keypadStandalone]);
 
   // Client-side search on SEARCH button click
   const handleSearch = () => {
@@ -187,13 +204,13 @@ function Billing() {
     }
   };
 
-  // Keypad component
+  // Numeric Keypad component
   function Keypad({ onInput, onBackspace, onDone, displayValue }) {
     const keys = [
       ['7', '8', '9'],
       ['4', '5', '6'],
       ['1', '2', '3'],
-      ['0', '.', '⌫'] // Use ⌫ instead of âŒ«
+      ['0', '.', '⌫']
     ];
     return (
       <div className="w-full flex flex-col items-center gap-2">
@@ -250,6 +267,7 @@ function Billing() {
                     if (search.trim()) {
                       setShowSuggestions(true);
                     }
+                    setShowKeypad(true); setActiveInput('search'); setKeypadType('qwerty'); setKeypadStandalone(false);
                   }}
                 />
             {showSuggestions && (
@@ -289,6 +307,7 @@ function Billing() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Enter product name"
                   value={productRow.name}
+                  onFocus={() => { setShowKeypad(true); setActiveInput('name'); setKeypadType('qwerty'); setKeypadStandalone(false); }}
                   onChange={e => setProductRow({ ...productRow, name: e.target.value })}
                 />
               </div>
@@ -310,7 +329,7 @@ function Billing() {
               value={productRow.qty}
                     readOnly
                     min="1"
-                    onFocus={() => { setShowKeypad(true); setActiveInput('qty'); setKeypadStandalone(false); }}
+                    onFocus={() => { setShowKeypad(true); setActiveInput('qty'); setKeypadType('numeric'); setKeypadStandalone(false); }}
                   />
                   <button
                     className="px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 border-l border-gray-300"
@@ -330,7 +349,7 @@ function Billing() {
                   placeholder="Enter amount"
               type="number"
                   value={productRow.amount}
-                  onFocus={() => { setShowKeypad(true); setActiveInput('amount'); setKeypadStandalone(false); }}
+                  onFocus={() => { setShowKeypad(true); setActiveInput('amount'); setKeypadType('numeric'); setKeypadStandalone(false); }}
                   readOnly={showKeypad && activeInput === 'amount'}
                   onChange={e => {
                     const amount = Number(e.target.value) || 0;
@@ -347,7 +366,7 @@ function Billing() {
                   placeholder="Weight in kg"
                   type="number"
               value={productRow.weight}
-                  onFocus={() => { setShowKeypad(true); setActiveInput('weight'); setKeypadStandalone(false); }}
+                  onFocus={() => { setShowKeypad(true); setActiveInput('weight'); setKeypadType('numeric'); setKeypadStandalone(false); }}
                   readOnly={showKeypad && activeInput === 'weight'}
                   onChange={e => {
                     const weight = Number(e.target.value) || 0;
@@ -381,7 +400,7 @@ function Billing() {
               >
                 Add to Quick Items
               </button>
-              {quickItemAdded && <span className="text-green-600 text-sm animate-bounce">✔️ Added!</span>}
+              {quickItemAdded && <span className="text-green-600 text-sm animate-bounce">✔ Added!</span>}
               <button 
                 className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
                 onClick={() => setProductRow({ ...initialProductRow })}
@@ -480,43 +499,101 @@ function Billing() {
             </div>
             {/* Show Keypad or Quick Items */}
             {showKeypad && (activeInput || keypadStandalone) ? (
-              <Keypad
-                value={keypadStandalone ? standaloneKeypadValue : productRow[activeInput]}
-                onInput={(val) => {
-                  if (keypadStandalone) {
-                    let newVal = String(standaloneKeypadValue || '');
-                    if (val === '.' && newVal.includes('.')) return;
-                    if (val === '.' && newVal === '') newVal = '0.';
-                    else if (val === '⌫') newVal = newVal.slice(0, -1);
-                    else newVal += val;
-                    setStandaloneKeypadValue(newVal);
-                  } else if (activeInput === 'qty') {
-                    let newVal = String(productRow.qty || '');
-                    if (val === '.') return;
-                    newVal = newVal === '0' ? val : newVal + val;
-                    setProductRow({ ...productRow, qty: Math.max(1, Number(newVal)) });
-                  } else {
-                    let newVal = String(productRow[activeInput] || '');
-                    if (val === '.' && newVal.includes('.')) return;
-                    if (val === '.' && newVal === '') newVal = '0.';
-                    else newVal += val;
-                    setProductRow({ ...productRow, [activeInput]: newVal });
-                  }
-                }}
-                onBackspace={() => {
-                  if (keypadStandalone) {
-                    let newVal = String(standaloneKeypadValue || '');
-                    newVal = newVal.slice(0, -1);
-                    setStandaloneKeypadValue(newVal);
-                  } else {
-                    let newVal = String(productRow[activeInput] || '');
-                    newVal = newVal.slice(0, -1);
-                    setProductRow({ ...productRow, [activeInput]: newVal });
-                  }
-                }}
-                onDone={() => { setShowKeypad(false); setActiveInput(null); setKeypadStandalone(false); setStandaloneKeypadValue(''); }}
-                displayValue={keypadStandalone ? standaloneKeypadValue : productRow[activeInput]}
-              />
+              keypadType === 'qwerty' ? (
+                <Keypad
+                  value={activeInput === 'name' ? productRow.name : search}
+                  onInput={(val) => {
+                    if (activeInput === 'name') {
+                      setProductRow(prev => ({ ...prev, name: (prev.name || '') + val }));
+                    } else if (activeInput === 'search') {
+                      setSearch(prev => prev + val);
+                    }
+                  }}
+                  onBackspace={() => {
+                    if (activeInput === 'name') {
+                      setProductRow(prev => ({ ...prev, name: prev.name.slice(0, -1) }));
+                    } else if (activeInput === 'search') {
+                      setSearch(prev => prev.slice(0, -1));
+                    }
+                  }}
+                  onSpace={() => {
+                    if (activeInput === 'name') {
+                      setProductRow(prev => ({ ...prev, name: (prev.name || '') + ' ' }));
+                    } else if (activeInput === 'search') {
+                      setSearch(prev => prev + ' ');
+                    }
+                  }}
+                  onDone={() => { setShowKeypad(false); setActiveInput(null); setKeypadStandalone(false); }}
+                />
+              ) : (
+                <Keypad
+                  value={keypadStandalone ? standaloneKeypadValue : productRow[activeInput]}
+                  onInput={(val) => {
+                    if (keypadStandalone) {
+                      let newVal = String(standaloneKeypadValue || '');
+                      if (val === '.' && newVal.includes('.')) return;
+                      if (val === '.' && newVal === '') newVal = '0.';
+                      else if (val === '⌫') newVal = newVal.slice(0, -1);
+                      else newVal += val;
+                      setStandaloneKeypadValue(newVal);
+                    } else if (activeInput === 'qty') {
+                      let newVal = String(productRow.qty || '');
+                      if (val === '.') return;
+                      newVal = newVal === '0' ? val : newVal + val;
+                      setProductRow({ ...productRow, qty: Math.max(1, Number(newVal)) });
+                    } else if (activeInput === 'weight') {
+                      let newVal = String(productRow.weight || '');
+                      if (val === '.' && newVal.includes('.')) return;
+                      if (val === '.' && newVal === '') newVal = '0.';
+                      else newVal += val;
+                      // Update amount based on pricePerKg
+                      const pricePerKg = Number(productRow.pricePerKg) || 0;
+                      const weightNum = Number(newVal) || 0;
+                      const amount = pricePerKg ? (weightNum * pricePerKg).toFixed(2) : '';
+                      setProductRow({ ...productRow, weight: newVal, amount });
+                    } else if (activeInput === 'amount') {
+                      let newVal = String(productRow.amount || '');
+                      if (val === '.' && newVal.includes('.')) return;
+                      if (val === '.' && newVal === '') newVal = '0.';
+                      else newVal += val;
+                      // Update weight based on pricePerKg
+                      const pricePerKg = Number(productRow.pricePerKg) || 0;
+                      const amountNum = Number(newVal) || 0;
+                      const weight = pricePerKg ? (amountNum / pricePerKg).toFixed(2) : '';
+                      setProductRow({ ...productRow, amount: newVal, weight });
+                    }
+                  }}
+                  onBackspace={() => {
+                    if (keypadStandalone) {
+                      let newVal = String(standaloneKeypadValue || '');
+                      newVal = newVal.slice(0, -1);
+                      setStandaloneKeypadValue(newVal);
+                    } else if (activeInput === 'qty') {
+                      let newVal = String(productRow.qty || '');
+                      newVal = newVal.slice(0, -1);
+                      setProductRow({ ...productRow, qty: Math.max(1, Number(newVal)) });
+                    } else if (activeInput === 'weight') {
+                      let newVal = String(productRow.weight || '');
+                      newVal = newVal.slice(0, -1);
+                      // Update amount based on pricePerKg
+                      const pricePerKg = Number(productRow.pricePerKg) || 0;
+                      const weightNum = Number(newVal) || 0;
+                      const amount = pricePerKg ? (weightNum * pricePerKg).toFixed(2) : '';
+                      setProductRow({ ...productRow, weight: newVal, amount });
+                    } else if (activeInput === 'amount') {
+                      let newVal = String(productRow.amount || '');
+                      newVal = newVal.slice(0, -1);
+                      // Update weight based on pricePerKg
+                      const pricePerKg = Number(productRow.pricePerKg) || 0;
+                      const amountNum = Number(newVal) || 0;
+                      const weight = pricePerKg ? (amountNum / pricePerKg).toFixed(2) : '';
+                      setProductRow({ ...productRow, amount: newVal, weight });
+                    }
+                  }}
+                  onDone={() => { setShowKeypad(false); setActiveInput(null); setKeypadStandalone(false); setStandaloneKeypadValue(''); }}
+                  displayValue={keypadStandalone ? standaloneKeypadValue : productRow[activeInput]}
+                />
+              )
             ) : (
               <div className="mt-2 bg-gray-50 border border-gray-200 rounded-lg p-3 max-h-60 overflow-y-auto">
                 <div className="flex items-center justify-between mb-2">
@@ -537,7 +614,7 @@ function Billing() {
                         await deleteQuickItem(item.id);
                       }}
                     >
-                          🗑️
+                      🗑️
                     </button>
                   </div>
                 ))}
@@ -690,3 +767,4 @@ function Billing() {
 }
 
 export default Billing;
+
