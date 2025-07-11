@@ -1,61 +1,53 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { db } from '../config/firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
 const HeroBanner = () => {
+  const [banners, setBanners] = useState([]);
   const [currentSlide, setCurrentSlide] = useState(0);
-  
-  const banners = [
-    {
-      id: 1,
-      image: 'https://images.unsplash.com/photo-1603049405392-74dc211f2ba6?w=800&h=400&fit=crop',
-      title: 'Fresh Meat Delivered',
-      subtitle: 'Premium quality meat at your doorstep'
-    },
-    {
-      id: 2,
-      image: 'https://images.unsplash.com/photo-1558030006-450675393462?w=800&h=400&fit=crop',
-      title: 'Special Offers',
-      subtitle: 'Up to 30% off on selected items'
-    },
-    {
-      id: 3,
-      image: 'https://images.unsplash.com/photo-1603049405392-74dc211f2ba6?w=800&h=400&fit=crop',
-      title: 'Organic & Fresh',
-      subtitle: 'Farm to table freshness guaranteed'
-    }
-  ];
 
   useEffect(() => {
+    const fetchBanners = async () => {
+      const snap = await getDocs(collection(db, 'banners'));
+      setBanners(snap.docs.map(doc => doc.data()));
+    };
+    fetchBanners();
+  }, []);
+
+  useEffect(() => {
+    if (!banners.length) return;
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % banners.length);
     }, 5000);
-
     return () => clearInterval(timer);
   }, [banners.length]);
 
+  if (!banners.length) return null;
+
   return (
-    <div className="relative h-48 md:h-64 overflow-hidden rounded-lg mb-6">
+    <div className="relative h-48 md:h-64 overflow-hidden rounded-lg mb-6 shadow-lg">
       {banners.map((banner, index) => (
         <div
-          key={banner.id}
+          key={index}
           className={`absolute inset-0 transition-opacity duration-1000 ${
-            index === currentSlide ? 'opacity-100' : 'opacity-0'
+            index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'
           }`}
         >
           <img
-            src={banner.image}
-            alt={banner.title}
+            src={banner.url}
+            alt={banner.title || `Banner ${index + 1}`}
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-black bg-opacity-40"></div>
-          <div className="absolute bottom-4 left-4 text-white">
-            <h2 className="text-xl md:text-2xl font-bold mb-1">{banner.title}</h2>
-            <p className="text-sm md:text-base opacity-90">{banner.subtitle}</p>
+          {/* Vignette and text overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+          <div className="absolute bottom-6 left-6 text-white">
+            <h2 className="text-2xl md:text-3xl font-bold mb-1 drop-shadow-lg">{banner.title}</h2>
+            <p className="text-base md:text-lg opacity-90 drop-shadow-lg">{banner.description}</p>
           </div>
         </div>
       ))}
-      
       {/* Dots indicator */}
-      <div className="absolute bottom-2 right-4 flex space-x-2">
+      <div className="absolute bottom-2 right-4 flex space-x-2 z-20">
         {banners.map((_, index) => (
           <button
             key={index}

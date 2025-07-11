@@ -8,6 +8,7 @@ import CategoriesManagement from './pages/CategoriesManagement';
 import OrdersManagement from './pages/OrdersManagement';
 import Analytics from './pages/Analytics';
 import Billing from './pages/Billing';
+import Banners from './pages/Banners';
 
 const AdminRoutes = () => {
   const { admin, logout } = useAdmin();
@@ -27,6 +28,8 @@ const AdminRoutes = () => {
         return <OrdersManagement />;
       case 'analytics':
         return <Analytics />;
+      case 'banners':
+        return <Banners />;
       default:
         return <DashboardHome />;
     }

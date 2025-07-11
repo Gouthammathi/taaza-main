@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
-import { 
-  MdDashboard, 
-  MdInventory, 
-  MdCategory, 
-  MdShoppingCart, 
+import {
+  MdDashboard,
+  MdInventory,
+  MdCategory,
+  MdShoppingCart,
   MdAnalytics,
   MdSettings,
   MdLogout,
   MdReceipt,
   MdChevronLeft,
-  MdChevronRight
+  MdChevronRight,
+  MdImage // Add image icon for banners
 } from 'react-icons/md';
 
 const AdminSidebar = ({ activePage, setActivePage }) => {
@@ -21,6 +22,7 @@ const AdminSidebar = ({ activePage, setActivePage }) => {
     { id: 'categories', label: 'Categories', icon: MdCategory },
     { id: 'orders', label: 'Orders', icon: MdShoppingCart },
     { id: 'analytics', label: 'Analytics', icon: MdAnalytics },
+    { id: 'banners', label: 'Banners', icon: MdImage }, // Add banners menu item
   ];
 
   return (
