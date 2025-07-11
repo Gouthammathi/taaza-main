@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  MdShoppingCart, 
-  MdInventory, 
-  MdTrendingUp, 
+import {
+  MdShoppingCart,
+  MdInventory,
+  MdTrendingUp,
   MdPeople,
   MdAttachMoney,
   MdLocalShipping,
   MdCheckCircle,
   MdSchedule
 } from 'react-icons/md';
+import { getOrders, getProducts } from '../../services/firebaseService';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../../config/firebase';
 
 const DashboardHome = () => {
   const [stats, setStats] = useState({
@@ -19,46 +22,56 @@ const DashboardHome = () => {
     completedOrders: 0,
     totalCustomers: 0
   });
-
   const [recentOrders, setRecentOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Mock data - replace with actual Firebase calls
-    setStats({
-      totalOrders: 156,
-      totalRevenue: 45230,
-      totalProducts: 24,
-      pendingOrders: 12,
-      completedOrders: 134,
-      totalCustomers: 89
-    });
-
-    setRecentOrders([
-      {
-        id: '1',
-        customer: 'John Doe',
-        items: 3,
-        total: 450,
-        status: 'pending',
-        date: '2024-01-15'
-      },
-      {
-        id: '2',
-        customer: 'Jane Smith',
-        items: 2,
-        total: 320,
-        status: 'completed',
-        date: '2024-01-14'
-      },
-      {
-        id: '3',
-        customer: 'Mike Johnson',
-        items: 5,
-        total: 780,
-        status: 'processing',
-        date: '2024-01-13'
+    const fetchData = async () => {
+      setLoading(true);
+      // Fetch orders
+      const orders = await getOrders();
+      // Fetch products
+      const products = await getProducts();
+      // Fetch customers (try users collection, else unique customer names/emails in orders)
+      let customers = [];
+      try {
+        const usersSnap = await getDocs(collection(db, 'users'));
+        customers = usersSnap.docs.filter(doc => (doc.data().role || '').toLowerCase() !== 'admin');
+      } catch {
+        // fallback: count unique customer names/emails in orders
+        const uniqueCustomers = new Set();
+        orders.forEach(order => {
+          if (order.customer) uniqueCustomers.add(order.customer);
+          else if (order.email) uniqueCustomers.add(order.email);
+        });
+        customers = Array.from(uniqueCustomers);
       }
-    ]);
+      // Calculate stats
+      const totalOrders = orders.length;
+      const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+      const pendingOrders = orders.filter(order => order.status === 'pending').length;
+      const completedOrders = orders.filter(order => order.status === 'completed').length;
+      const totalProducts = products.length;
+      const totalCustomers = customers.length;
+      setStats({
+        totalOrders,
+        totalRevenue,
+        totalProducts,
+        pendingOrders,
+        completedOrders,
+        totalCustomers
+      });
+      setRecentOrders(orders.slice(0, 5).map(order => ({
+        id: order.orderId || order.id,
+        customer: order.customer || order.email || 'Customer',
+        items: (order.products || order.items || []).length,
+        total: order.total,
+        status: order.status || 'pending',
+        date: order.createdAt && order.createdAt.toDate ? order.createdAt.toDate().toLocaleDateString() : ''
+      })));
+      setLoading(false);
+    };
+    fetchData();
   }, []);
 
   const StatCard = ({ title, value, icon: Icon, color, change }) => (
@@ -140,7 +153,7 @@ const DashboardHome = () => {
             <MdSchedule className="w-8 h-8 text-yellow-500" />
           </div>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
@@ -150,7 +163,7 @@ const DashboardHome = () => {
             <MdLocalShipping className="w-8 h-8 text-blue-500" />
           </div>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
           <div className="flex items-center justify-between">
             <div>

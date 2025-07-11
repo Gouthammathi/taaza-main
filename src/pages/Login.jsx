@@ -32,48 +32,59 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900">Sign in to your account</h2>
+    <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-gray-50 to-gray-100 px-4">
+      <div className="w-full max-w-sm bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-8 flex flex-col items-center">
+        <div className="flex flex-col items-center mb-6">
+          <span className="text-4xl mb-2">🥩</span>
+          <h1 className="text-2xl font-extrabold text-red-700 tracking-tight mb-1">Taaza Meat </h1>
+          <p className="text-gray-500 text-sm">Sign in to continue</p>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">{error}</div>}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                value={form.email}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              />
+        <form onSubmit={handleSubmit} className="w-full space-y-5">
+          {error && (
+            <div className="bg-red-50 text-red-600 text-sm rounded-lg px-3 py-2 mb-2 border border-red-100 text-center animate-fade-in">
+              {error}
             </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                value={form.password}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Signing in...' : 'Sign In'}
-            </button>
-          </form>
-        </div>
+          )}
+          <div>
+            <label htmlFor="email" className="block text-xs font-semibold text-gray-600 mb-1">Email</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="username"
+              value={form.email}
+              onChange={handleChange}
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-200 focus:border-red-400 outline-none transition placeholder-gray-400 text-sm"
+              placeholder="you@company.com"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="password" className="block text-xs font-semibold text-gray-600 mb-1">Password</label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              value={form.password}
+              onChange={handleChange}
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-200 focus:border-red-400 outline-none transition placeholder-gray-400 text-sm"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2.5 rounded-lg font-semibold text-white bg-red-700 hover:bg-red-800 transition-colors focus:outline-none focus:ring-2 focus:ring-red-300 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm mt-2"
+          >
+            {loading ? 'Signing in…' : 'Sign In'}
+          </button>
+        </form>
       </div>
+      <footer className="mt-8 text-xs text-gray-400 text-center">
+        &copy; {new Date().getFullYear()} Taaza Meat. All rights reserved.
+      </footer>
     </div>
   );
 };

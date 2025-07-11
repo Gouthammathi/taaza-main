@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import Header from '../components/Header';
+import { getCategories, updateCategory } from '../services/firebaseService';
 
 const Checkout = ({ onNavigateToCart, onNavigateToSuccess, onNavigate, activeTab, cartCount, query, setQuery, onAdminClick }) => {
   const { items, getTotalPrice, clearCart } = useCart();
@@ -18,10 +19,18 @@ const Checkout = ({ onNavigateToCart, onNavigateToSuccess, onNavigate, activeTab
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    // Deduct purchased quantity from category wholeQuantity
+    const categories = await getCategories();
+    for (const item of items) {
+      const cat = categories.find(c => c.key === item.category);
+      if (cat && typeof cat.wholeQuantity === 'number') {
+        const newQty = Math.max(0, cat.wholeQuantity - item.quantity);
+        await updateCategory(cat.id, { ...cat, wholeQuantity: newQty });
+      }
+    }
     // Here you would typically send the order to your backend
-    // For now, we'll just simulate a successful order
     clearCart();
     onNavigateToSuccess();
   };
