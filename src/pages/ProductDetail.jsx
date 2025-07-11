@@ -43,7 +43,7 @@ const ProductDetail = ({ product, onNavigate, activeTab, cartCount, query, setQu
                   {product.pricePerKg && Number(product.pricePerKg) > 0 ? (
                     <span className="text-red-700 font-bold text-xl">₹{product.pricePerKg} <span className='text-xs text-gray-500'>/kg</span></span>
                   ) : (
-                    <span className="text-red-700 font-bold text-xl">₹{product.price}</span>
+                  <span className="text-red-700 font-bold text-xl">₹{product.price}</span>
                   )}
                   {product.originalPrice && (
                     <span className="text-gray-400 text-base line-through">₹{product.originalPrice}</span>

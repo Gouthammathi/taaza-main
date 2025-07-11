@@ -22,6 +22,8 @@ function cleanObject(obj) {
 const ProductsManagement = () => {
   const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [formData, setFormData] = useState({
@@ -154,10 +156,14 @@ const ProductsManagement = () => {
     }
   };
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Update filteredProducts to filter by category and status
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.category.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = !filterCategory || product.category === filterCategory;
+    const matchesStatus = !filterStatus || (product.status || 'active') === filterStatus;
+    return matchesSearch && matchesCategory && matchesStatus;
+  });
 
   const getStatusColor = (status) => {
     return status === 'active' ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100';
@@ -225,17 +231,27 @@ const ProductsManagement = () => {
               />
             </div>
           </div>
-          <select className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          {/* Category filter */}
+          <select
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            value={filterCategory}
+            onChange={e => setFilterCategory(e.target.value)}
+          >
             <option value="">All Categories</option>
-            <option value="chicken">Chicken</option>
-            <option value="mutton">Mutton</option>
-            <option value="eggs">Eggs</option>
-            <option value="masalas">Masalas</option>
+            {categories.map(cat => (
+              <option key={cat.key} value={cat.key}>{cat.name}</option>
+            ))}
           </select>
-          <select className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          {/* Status filter */}
+          <select
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            value={filterStatus}
+            onChange={e => setFilterStatus(e.target.value)}
+          >
             <option value="">All Status</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
+            <option value="out-of-stock">Out of Stock</option>
           </select>
         </div>
       </div>
@@ -313,37 +329,37 @@ const ProductsManagement = () => {
                     {/* Item Name + Image + Category Quantity Left */}
                     <td className="px-6 py-4 align-middle font-medium text-gray-900 text-base">
                       <div className="flex items-center gap-3">
-                        <img
+                      <img
                           className="h-10 w-10 rounded-lg object-cover border"
-                          src={product.image}
-                          alt={product.name}
-                        />
+                        src={product.image}
+                        alt={product.name}
+                      />
                         <span>{product.name}</span>
                         {(() => {
                           return (
                             <span className="ml-2 inline-block bg-green-100 text-green-700 text-xs font-medium rounded px-2 py-0.5">Qty Left: {qtyLeft}</span>
                           );
                         })()}
-                      </div>
-                    </td>
+                    </div>
+                  </td>
                     {/* Category */}
                     <td className="px-6 py-4 align-middle">
                       <span className="inline-block bg-blue-100 text-blue-700 text-xs font-medium rounded px-2 py-0.5">{getCategoryName(product.category)}</span>
-                    </td>
+                  </td>
                     {/* Cost */}
                     <td className="px-6 py-4 align-middle">
                       {product.pricePerKg ? (
                         <span className="inline-block bg-yellow-100 text-yellow-700 text-sm font-semibold rounded px-3 py-1">₹{product.pricePerKg} <span className="text-xs">/kg</span></span>
                       ) : (
                         <span className="inline-block bg-yellow-50 text-yellow-700 text-sm font-semibold rounded px-3 py-1">₹{product.price}</span>
-                      )}
-                    </td>
+                    )}
+                  </td>
                     {/* Quantity */}
                     <td className="px-6 py-4 align-middle">
                       <span className="inline-block bg-gray-100 text-gray-800 text-xs font-medium rounded px-2 py-0.5">
                         {qtyLeft} / {wholeQty}
-                      </span>
-                    </td>
+                    </span>
+                  </td>
                     {/* Actions: Kebab menu */}
                     <td className="px-6 py-4 align-middle text-center relative">
                       <button
@@ -360,17 +376,17 @@ const ProductsManagement = () => {
                             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           >
                             Edit
-                          </button>
-                          <button
+                      </button>
+                      <button
                             onClick={() => { setOpenMenuId(null); handleDelete(product.id); }}
                             className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                          >
+                      >
                             Delete
-                          </button>
-                        </div>
+                      </button>
+                    </div>
                       )}
-                    </td>
-                  </tr>
+                  </td>
+                </tr>
                 );
               })}
             </tbody>
@@ -414,7 +430,7 @@ const ProductsManagement = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                 <select
                   value={formData.category}
-                  onChange={e => {
+                    onChange={e => {
                     const catKey = e.target.value;
                     let unit = formData.unit;
                     if (catKey.toLowerCase().includes('chicken') || catKey.toLowerCase().includes('mutton')) unit = 'kg';
@@ -422,15 +438,15 @@ const ProductsManagement = () => {
                     else if (catKey.toLowerCase().includes('masala')) unit = 'grams';
                     else unit = 'kg';
                     setFormData({ ...formData, category: catKey, subcategory: '', unit });
-                  }}
+                    }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                >
-                  <option value="">Select Category</option>
+                    required
+                  >
+                    <option value="">Select Category</option>
                   {categories.map(cat => (
                     <option key={cat.key} value={cat.key}>{cat.name}</option>
                   ))}
-                </select>
+                  </select>
               </div>
               {/* Only show unit and price/fields if a category is selected */}
               {formData.category && (
@@ -481,15 +497,15 @@ const ProductsManagement = () => {
                     <div className="flex gap-3">
                       <div className="flex-1">
                         <label className="block text-sm font-medium text-gray-700 mb-1">Price per piece (₹)</label>
-                        <input
+                    <input
                           type="number"
                           min="0"
                           step="0.01"
                           value={formData.pricePerKg || ''}
                           onChange={e => setFormData({ ...formData, pricePerKg: e.target.value })}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          required
-                        />
+                      required
+                    />
                       </div>
                     </div>
                   )}
@@ -506,8 +522,8 @@ const ProductsManagement = () => {
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           required
                         />
-                      </div>
-                      <div className="flex-1">
+                </div>
+                <div className="flex-1">
                         <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
                         <input
                           type="number"
@@ -518,15 +534,15 @@ const ProductsManagement = () => {
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           required
                         />
-                      </div>
-                    </div>
+                </div>
+              </div>
                   )}
                 </>
               )}
               {/* Nutrient values */}
               {categoryType !== 'masala' && (
                 <div className="flex gap-3">
-                  <div className="flex-1">
+                <div className="flex-1">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Protein (g)</label>
                     <input
                       type="number"
@@ -537,8 +553,8 @@ const ProductsManagement = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       required
                     />
-                  </div>
-                  <div className="flex-1">
+                </div>
+                <div className="flex-1">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Fat (g)</label>
                     <input
                       type="number"
@@ -549,8 +565,8 @@ const ProductsManagement = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       required
                     />
-                  </div>
-                  <div className="flex-1">
+                </div>
+                <div className="flex-1">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Carbs (g)</label>
                     <input
                       type="number"
@@ -561,7 +577,7 @@ const ProductsManagement = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       required
                     />
-                  </div>
+              </div>
                 </div>
               )}
               {subcategories.length > 0 && (

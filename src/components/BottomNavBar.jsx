@@ -64,7 +64,7 @@ const BottomNavBar = ({ activeTab = 'home', onTabChange, cartItemCount, onCartCl
             }`}
           >
             <span className="relative">
-              {item.icon}
+            {item.icon}
               {item.id === 'cart' && cartItemCount > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
                   {cartItemCount}
