@@ -1,7 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { getProducts } from '../../services/firebaseService';
-import { addDoc, collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { addDoc, collection, getDocs, deleteDoc, doc, getDoc, setDoc, runTransaction } from 'firebase/firestore';
 import { db } from '../../config/firebase';
+
+function generateOrderId(type = 'customer') {
+  const now = new Date();
+  const datePart = now.toISOString().slice(0,10).replace(/-/g, '');
+  const randomPart = Math.floor(1000 + Math.random() * 9000); // 4-digit random
+  const prefix = type === 'admin' ? 'ADM' : 'CUS';
+  return `${prefix}-${datePart}-${randomPart}`;
+}
+
+async function getNextAdminOrderNumber() {
+  const counterRef = doc(db, 'orderCounters', 'admin');
+  return await runTransaction(db, async (transaction) => {
+    const counterDoc = await transaction.get(counterRef);
+    let nextNumber = 1;
+    if (counterDoc.exists()) {
+      nextNumber = (counterDoc.data().current || 0) + 1;
+    }
+    transaction.set(counterRef, { current: nextNumber });
+    return nextNumber;
+  });
+}
 
 const initialProductRow = {
   name: '',
@@ -143,7 +164,10 @@ function Billing() {
     setProcessing(true);
     setTimeout(async () => {
       // Simulate order ID and details
-      const orderId = 'ORD' + Math.floor(Math.random() * 1000000);
+      const nextNumber = await getNextAdminOrderNumber();
+      const now = new Date();
+      const datePart = now.toISOString().slice(0,10).replace(/-/g, '');
+      const orderId = `ADM-${datePart}-${String(nextNumber).padStart(5, '0')}`;
       const orderData = {
         orderId,
         products: currentBill.products,

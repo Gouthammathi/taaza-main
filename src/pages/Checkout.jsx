@@ -2,6 +2,30 @@ import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import Header from '../components/Header';
 import { getCategories, updateCategory } from '../services/firebaseService';
+// Add Firestore imports
+import { db } from '../config/firebase';
+import { collection, addDoc, Timestamp, doc, getDoc, setDoc, runTransaction } from 'firebase/firestore';
+
+function generateOrderId(type = 'customer') {
+  const now = new Date();
+  const datePart = now.toISOString().slice(0,10).replace(/-/g, '');
+  const randomPart = Math.floor(1000 + Math.random() * 9000); // 4-digit random
+  const prefix = type === 'admin' ? 'ADM' : 'CUS';
+  return `${prefix}-${datePart}-${randomPart}`;
+}
+
+async function getNextCustomerOrderNumber() {
+  const counterRef = doc(db, 'orderCounters', 'customer');
+  return await runTransaction(db, async (transaction) => {
+    const counterDoc = await transaction.get(counterRef);
+    let nextNumber = 1;
+    if (counterDoc.exists()) {
+      nextNumber = (counterDoc.data().current || 0) + 1;
+    }
+    transaction.set(counterRef, { current: nextNumber });
+    return nextNumber;
+  });
+}
 
 const Checkout = ({ onNavigateToCart, onNavigateToSuccess, onNavigate, activeTab, cartCount, query, setQuery, onAdminClick }) => {
   const { items, getTotalPrice, clearCart } = useCart();
@@ -31,7 +55,34 @@ const Checkout = ({ onNavigateToCart, onNavigateToSuccess, onNavigate, activeTab
         await updateCategory(cat.id, { ...cat, wholeQuantity: newQty, quantityLeft: newQtyLeft });
       }
     }
-    // Here you would typically send the order to your backend
+    // Store order in Firestore
+    const nextNumber = await getNextCustomerOrderNumber();
+    const now = new Date();
+    const datePart = now.toISOString().slice(0,10).replace(/-/g, '');
+    const orderId = `CUS-${datePart}-${String(nextNumber).padStart(5, '0')}`;
+    const orderData = {
+      orderId,
+      customer: formData.name,
+      phone: formData.phone,
+      notes: formData.notes,
+      items: items.map(item => ({
+        id: item.id,
+        name: item.name,
+        category: item.category,
+        qty: item.quantity,
+        price: item.price,
+        total: item.price * item.quantity,
+        image: item.image,
+        weight: item.weight || null,
+        pricePerKg: item.pricePerKg || null,
+      })),
+      total: getTotalPrice(),
+      status: 'pending',
+      createdAt: Timestamp.now(),
+      paymentMethod: 'cash', // or set dynamically if you add payment selection
+      // Add more fields as needed
+    };
+    await addDoc(collection(db, 'orders'), orderData);
     clearCart();
     onNavigateToSuccess();
   };

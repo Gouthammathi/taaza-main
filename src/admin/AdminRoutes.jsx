@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAdmin } from '../context/AdminContext';
 import AdminSidebar from './components/AdminSidebar';
 import AdminHeader from './components/AdminHeader';
@@ -12,7 +12,11 @@ import Banners from './pages/Banners';
 
 const AdminRoutes = () => {
   const { admin, logout } = useAdmin();
-  const [activePage, setActivePage] = useState('dashboard');
+  const [activePage, setActivePage] = useState(() => 'billing');
+
+  useEffect(() => {
+    localStorage.setItem('adminActivePage', activePage);
+  }, [activePage]);
 
   const renderPage = () => {
     switch (activePage) {

@@ -17,10 +17,10 @@ const AdminSidebar = ({ activePage, setActivePage }) => {
   const [collapsed, setCollapsed] = useState(false);
   const menuItems = [
     { id: 'billing', label: 'Billing', icon: MdReceipt },
+    { id: 'orders', label: 'Orders', icon: MdShoppingCart },
     { id: 'dashboard', label: 'Dashboard', icon: MdDashboard },
     { id: 'products', label: 'Products', icon: MdInventory },
     { id: 'categories', label: 'Categories', icon: MdCategory },
-    { id: 'orders', label: 'Orders', icon: MdShoppingCart },
     { id: 'analytics', label: 'Analytics', icon: MdAnalytics },
     { id: 'banners', label: 'Banners', icon: MdImage }, // Add banners menu item
   ];

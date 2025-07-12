@@ -141,70 +141,10 @@ const DashboardHome = () => {
         />
       </div>
 
-      {/* Order Status Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Pending Orders</p>
-              <p className="text-2xl font-bold text-yellow-600">{stats.pendingOrders}</p>
-            </div>
-            <MdSchedule className="w-8 h-8 text-yellow-500" />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Processing</p>
-              <p className="text-2xl font-bold text-blue-600">{stats.totalOrders - stats.pendingOrders - stats.completedOrders}</p>
-            </div>
-            <MdSchedule className="w-8 h-8 text-blue-500" />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Completed</p>
-              <p className="text-2xl font-bold text-green-600">{stats.completedOrders}</p>
-            </div>
-            <MdCheckCircle className="w-8 h-8 text-green-500" />
-          </div>
-        </div>
-      </div>
+     
 
       {/* Recent Orders */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Recent Orders</h3>
-        </div>
-        <div className="p-6">
-          <div className="space-y-4">
-            {recentOrders.map((order) => (
-              <div key={order.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center space-x-4">
-                  <div className="flex-shrink-0">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <MdShoppingCart className="w-5 h-5 text-blue-600" />
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{order.customer}</p>
-                    <p className="text-sm text-gray-500">Order #{order.id} • {order.items} items</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <span className="text-sm font-medium text-gray-900">₹{order.total}</span>
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(order.status)}`}>
-                    {order.status}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+     
     </div>
   );
 };

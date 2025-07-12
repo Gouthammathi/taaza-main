@@ -6,7 +6,7 @@ import {
   MdSchedule,
   MdCancel
 } from 'react-icons/md';
-import { onSnapshot, collection, deleteDoc, doc } from 'firebase/firestore';
+import { onSnapshot, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import * as XLSX from 'xlsx';
 
@@ -18,6 +18,7 @@ const OrdersManagement = () => {
   const [customRange, setCustomRange] = useState({ from: '', to: '' });
   const [summaryModal, setSummaryModal] = useState(false);
   const [summaryData, setSummaryData] = useState([]);
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   useEffect(() => {
     // Real-time Firestore listener
@@ -33,10 +34,11 @@ const OrdersManagement = () => {
           total: data.total || 0,
           status: data.status || 'pending',
           createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : (data.createdAt || new Date()),
-
           paymentMethod: data.paymentMethod || '',
         };
       });
+      // Sort by createdAt descending (latest first)
+      fetchedOrders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       setOrders(fetchedOrders);
     });
     return () => unsubscribe();
@@ -289,33 +291,33 @@ const OrdersManagement = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">#{order.id}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{order.items.length} items</div>
-                      <div className="text-sm text-gray-500">
-                        {order.items.map(item => item.name).join(', ')}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">₹{order.total}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{formatDate(order.createdAt)}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center space-x-2">
-                        <button
-                        onClick={() => setDeleteConfirm(order)}
+                <tr key={order.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setSelectedOrder(order)}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">#{order.id}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{order.items.length} items</div>
+                    <div className="text-sm text-gray-500">
+                      {order.items.map(item => item.name).join(', ')}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">₹{order.total}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{formatDate(order.createdAt)}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={e => { e.stopPropagation(); setDeleteConfirm(order); }}
                         className="text-red-600 hover:text-red-900 p-1"
-                          >
+                      >
                         Delete
-                          </button>
-                      </div>
-                    </td>
-                  </tr>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
               ))}
             </tbody>
           </table>
@@ -404,6 +406,64 @@ const OrdersManagement = () => {
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedOrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-8 border border-gray-200">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-gray-900">Order Details</h2>
+              <button onClick={() => setSelectedOrder(null)} className="text-gray-400 hover:text-gray-700 text-2xl p-1 rounded transition">&times;</button>
+            </div>
+            <div className="mb-4">
+              <div className="text-sm text-gray-500 mb-1">Order ID</div>
+              <div className="font-mono text-lg text-gray-900">#{selectedOrder.id}</div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <div className="text-sm text-gray-500 mb-1">Customer</div>
+                <div className="text-base text-gray-900">{selectedOrder.customer || '-'}</div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-500 mb-1">Phone</div>
+                <div className="text-base text-gray-900">{selectedOrder.phone || '-'}</div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-500 mb-1">Status</div>
+                <div className="text-base text-gray-900 capitalize">{selectedOrder.status}</div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-500 mb-1">Payment Method</div>
+                <div className="text-base text-gray-900 capitalize">{selectedOrder.paymentMethod || '-'}</div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-500 mb-1">Date</div>
+                <div className="text-base text-gray-900">{formatDate(selectedOrder.createdAt)}</div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-500 mb-1">Total</div>
+                <div className="text-lg font-bold text-blue-700">₹{selectedOrder.total}</div>
+              </div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-500 mb-2 font-semibold">Items</div>
+              <div className="divide-y divide-gray-100 rounded-lg border border-gray-200 overflow-hidden">
+                {selectedOrder.items.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between px-4 py-3 bg-white hover:bg-gray-50 transition">
+                    <div>
+                      <div className="font-medium text-gray-900">{item.name}</div>
+                      <div className="text-xs text-gray-500">Category: {item.category || '-'}</div>
+                    </div>
+                    <div className="flex items-center gap-6">
+                      <div className="text-sm text-gray-700">Qty: <span className="font-semibold">{item.quantity || item.qty || 1}</span></div>
+                      <div className="text-sm text-gray-700">Price: <span className="font-semibold">₹{item.price || item.pricePerKg || '-'}</span></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
