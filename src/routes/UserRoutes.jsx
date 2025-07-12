@@ -22,6 +22,7 @@ const UserRoutes = ({ onAdminClick }) => {
   const { getTotalItems, getTotalPrice } = useCart();
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
+  const [lastOrderId, setLastOrderId] = useState(null);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -50,7 +51,10 @@ const UserRoutes = ({ onAdminClick }) => {
   const navigateToHome = () => setCurrentPage('home');
   const navigateToCart = () => setCurrentPage('cart');
   const navigateToCheckout = () => setCurrentPage('checkout');
-  const navigateToSuccess = () => setCurrentPage('success');
+  const navigateToSuccess = (orderId) => {
+    setLastOrderId(orderId);
+    setCurrentPage('success');
+  };
   const navigateToCategories = () => setCurrentPage('categories');
   const navigateToSearch = () => setCurrentPage('search');
   const navigateToCategoryPage = (key, subKey = 'all') => {
@@ -77,7 +81,7 @@ const UserRoutes = ({ onAdminClick }) => {
       case 'checkout':
         return <Checkout onNavigateToCart={navigateToCart} onNavigateToSuccess={navigateToSuccess} onNavigate={handleHeaderNavigate} activeTab="checkout" cartCount={getTotalItems()} query={searchQuery} setQuery={setSearchQuery} onAdminClick={onAdminClick} />;
       case 'success':
-        return <OrderSuccess onNavigateToHome={navigateToHome} onNavigate={handleHeaderNavigate} activeTab="home" cartCount={getTotalItems()} query={searchQuery} setQuery={setSearchQuery} onAdminClick={onAdminClick} />;
+        return <OrderSuccess orderId={lastOrderId} onNavigateToHome={navigateToHome} onNavigate={handleHeaderNavigate} activeTab="home" cartCount={getTotalItems()} query={searchQuery} setQuery={setSearchQuery} onAdminClick={onAdminClick} />;
       case 'categories':
         return <Categories onNavigateToCategory={navigateToCategoryPage} onNavigate={handleHeaderNavigate} activeTab="categories" cartCount={getTotalItems()} query={searchQuery} setQuery={setSearchQuery} onAdminClick={onAdminClick} />;
       case 'search':

@@ -1,8 +1,8 @@
 import React from 'react';
 import Header from '../components/Header';
 
-const OrderSuccess = ({ onNavigateToHome, onNavigate, activeTab, cartCount, query, setQuery, onAdminClick }) => {
-  const orderNumber = Math.floor(Math.random() * 1000000) + 100000;
+const OrderSuccess = ({ orderId, onNavigateToHome, onNavigate, activeTab, cartCount, query, setQuery, onAdminClick }) => {
+  // const orderNumber = Math.floor(Math.random() * 1000000) + 100000; // This line is removed
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
@@ -35,7 +35,7 @@ const OrderSuccess = ({ onNavigateToHome, onNavigate, activeTab, cartCount, quer
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Order Number:</span>
-                  <span className="font-medium">#{orderNumber}</span>
+                  <span className="font-medium">#{orderId}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Estimated Pickup:</span>

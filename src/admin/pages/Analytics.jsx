@@ -179,7 +179,7 @@ const Analytics = () => {
       </div>
 
       {/* Performance Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
           <h4 className="text-lg font-semibold text-gray-900 mb-4">Order Status</h4>
           <div className="space-y-3">
@@ -233,7 +233,7 @@ const Analytics = () => {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };

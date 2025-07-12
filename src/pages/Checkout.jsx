@@ -34,6 +34,7 @@ const Checkout = ({ onNavigateToCart, onNavigateToSuccess, onNavigate, activeTab
     phone: '',
     notes: ''
   });
+  const [lastOrderId, setLastOrderId] = useState(null);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -83,8 +84,9 @@ const Checkout = ({ onNavigateToCart, onNavigateToSuccess, onNavigate, activeTab
       // Add more fields as needed
     };
     await addDoc(collection(db, 'orders'), orderData);
+    setLastOrderId(orderId);
     clearCart();
-    onNavigateToSuccess();
+    onNavigateToSuccess(orderId);
   };
 
   const isFormValid = formData.name.trim() && formData.phone.trim();

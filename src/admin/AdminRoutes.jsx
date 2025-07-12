@@ -52,7 +52,7 @@ const AdminRoutes = () => {
     <div className="flex h-screen bg-gray-100">
       <AdminSidebar activePage={activePage} setActivePage={setActivePage} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <AdminHeader admin={admin} onLogout={logout} />
+        {activePage !== 'billing' && <AdminHeader admin={admin} onLogout={logout} />}
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
           {renderPage()}
         </main>
