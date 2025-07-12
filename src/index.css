@@ -25,3 +25,18 @@
     @apply bg-white rounded-lg shadow-sm border border-gray-200;
   }
 }
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.animate-fadeInDown {
+  animation: fadeInDown 0.18s cubic-bezier(0.4,0,0.2,1);
+}
+.animate-fadeInUp {
+  animation: fadeInUp 0.18s cubic-bezier(0.4,0,0.2,1);
+}

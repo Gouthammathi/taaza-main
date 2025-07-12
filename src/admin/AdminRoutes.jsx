@@ -9,6 +9,7 @@ import OrdersManagement from './pages/OrdersManagement';
 import Analytics from './pages/Analytics';
 import Billing from './pages/Billing';
 import Banners from './pages/Banners';
+import EmployeeManagement from './pages/EmployeeManagement';
 
 const AdminRoutes = () => {
   const { admin, logout } = useAdmin();
@@ -34,6 +35,8 @@ const AdminRoutes = () => {
         return <Analytics />;
       case 'banners':
         return <Banners />;
+      case 'employees':
+        return <EmployeeManagement />;
       default:
         return <DashboardHome />;
     }
@@ -53,7 +56,7 @@ const AdminRoutes = () => {
       <AdminSidebar activePage={activePage} setActivePage={setActivePage} />
       <div className="flex-1 flex flex-col overflow-hidden">
         {activePage !== 'billing' && <AdminHeader admin={admin} onLogout={logout} />}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 pl-6 pr-6 pt-3 pb-3">
           {renderPage()}
         </main>
       </div>

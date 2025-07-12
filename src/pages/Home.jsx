@@ -16,6 +16,7 @@ const Home = ({ onNavigateToCart, onNavigateToCategory, onNavigate, activeTab, c
     const fetchProducts = async () => {
       try {
         const data = await getProducts();
+        console.log('Fetched products:', data.length, data);
         setProducts(data);
       } catch (error) {
         console.error('Error fetching products:', error);
@@ -28,6 +29,7 @@ const Home = ({ onNavigateToCart, onNavigateToCategory, onNavigate, activeTab, c
     const fetchCategories = async () => {
       try {
         const data = await getCategories();
+        console.log('Fetched categories:', data.length, data);
         setCategories(data);
       } catch (error) {
         console.error('Error fetching categories:', error);
@@ -49,12 +51,27 @@ const Home = ({ onNavigateToCart, onNavigateToCategory, onNavigate, activeTab, c
   }
 
   const sortedCategories = [...categories].sort((a, b) => getCategoryPriority(a) - getCategoryPriority(b));
+  console.log('Sorted categories:', sortedCategories);
 
   const bestsellers = products.filter(product => product.bestSeller).sort((a, b) => {
     const catA = categories.find(cat => cat.key === a.category);
     const catB = categories.find(cat => cat.key === b.category);
     return getCategoryPriority(catA || {}) - getCategoryPriority(catB || {});
   });
+  console.log('Bestsellers:', bestsellers.length, bestsellers);
+
+  // Debug: Log products by category
+  sortedCategories.forEach(cat => {
+    const catProducts = products.filter(p => p.category === cat.key);
+    console.log(`Products for ${cat.name} (${cat.key}):`, catProducts.length, catProducts);
+  });
+
+  // Fix: Case-insensitive category filtering
+  const getProductsByCategory = (categoryKey) => {
+    return products.filter(p => 
+      p.category && p.category.toLowerCase() === categoryKey.toLowerCase()
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
@@ -137,7 +154,7 @@ const Home = ({ onNavigateToCart, onNavigateToCategory, onNavigate, activeTab, c
           <div className="space-y-12">
             {/* Group products by dynamic categories */}
             {sortedCategories.map((cat) => {
-              const catProducts = products.filter(p => p.category === cat.key);
+              const catProducts = getProductsByCategory(cat.key);
               if (catProducts.length === 0) return null;
               return (
                 <div key={cat.id} className="">

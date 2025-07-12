@@ -10,7 +10,8 @@ import {
   MdReceipt,
   MdChevronLeft,
   MdChevronRight,
-  MdImage // Add image icon for banners
+  MdImage,
+  MdPeople
 } from 'react-icons/md';
 
 const AdminSidebar = ({ activePage, setActivePage }) => {
@@ -22,7 +23,8 @@ const AdminSidebar = ({ activePage, setActivePage }) => {
     { id: 'products', label: 'Products', icon: MdInventory },
     { id: 'categories', label: 'Categories', icon: MdCategory },
     { id: 'analytics', label: 'Analytics', icon: MdAnalytics },
-    { id: 'banners', label: 'Banners', icon: MdImage }, // Add banners menu item
+    { id: 'banners', label: 'Banners', icon: MdImage },
+    { id: 'employees', label: 'Employees', icon: MdPeople },
   ];
 
   return (
@@ -72,4 +74,4 @@ const AdminSidebar = ({ activePage, setActivePage }) => {
   );
 };
 
-export default AdminSidebar; 
+export default AdminSidebar;
