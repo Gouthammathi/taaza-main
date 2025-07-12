@@ -52,7 +52,6 @@ const OrderSuccess = ({ onNavigateToHome, onNavigate, activeTab, cartCount, quer
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
               <h3 className="font-semibold text-red-800 mb-2">Store Information</h3>
               <div className="text-sm text-red-700 space-y-1">
-                <p><strong>Address:</strong> 123 Meat Street, Food District</p>
                 <p><strong>Phone:</strong> +91 98765 43210</p>
                 <p className="font-medium mt-2">
                   Please bring your order number when collecting.

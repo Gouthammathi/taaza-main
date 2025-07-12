@@ -324,7 +324,7 @@ function Billing() {
                     -
                   </button>
             <input
-                    className="w-16 text-center px-2 py-2 border-none focus:ring-0 focus:outline-none bg-transparent"
+                    className="w-10 text-center px-2 py-2 border-none focus:ring-0 focus:outline-none bg-transparent"
               type="number"
               value={productRow.qty}
                     readOnly
@@ -332,7 +332,7 @@ function Billing() {
                     onFocus={() => { setShowKeypad(true); setActiveInput('qty'); setKeypadType('numeric'); setKeypadStandalone(false); }}
                   />
                   <button
-                    className="px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 border-l border-gray-300"
+                    className="px-2 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 border-l border-gray-300"
                     onClick={() => {
                       const newQty = Number(productRow.qty) + 1;
                       setProductRow({ ...productRow, qty: newQty });

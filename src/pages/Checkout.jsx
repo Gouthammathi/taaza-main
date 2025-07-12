@@ -27,7 +27,8 @@ const Checkout = ({ onNavigateToCart, onNavigateToSuccess, onNavigate, activeTab
       const cat = categories.find(c => c.key === item.category);
       if (cat && typeof cat.wholeQuantity === 'number') {
         const newQty = Math.max(0, cat.wholeQuantity - item.quantity);
-        await updateCategory(cat.id, { ...cat, wholeQuantity: newQty });
+        const newQtyLeft = Math.max(0, (cat.quantityLeft ?? cat.wholeQuantity) - item.quantity);
+        await updateCategory(cat.id, { ...cat, wholeQuantity: newQty, quantityLeft: newQtyLeft });
       }
     }
     // Here you would typically send the order to your backend
@@ -160,10 +161,7 @@ const Checkout = ({ onNavigateToCart, onNavigateToSuccess, onNavigate, activeTab
                   <span className="text-gray-600">Subtotal</span>
                   <span className="font-medium">₹{getTotalPrice()}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Delivery Fee</span>
-                  <span className="font-medium">Free</span>
-                </div>
+
                 <div className="border-t pt-2">
                   <div className="flex justify-between">
                     <span className="font-bold text-lg">Total</span>
@@ -177,7 +175,6 @@ const Checkout = ({ onNavigateToCart, onNavigateToSuccess, onNavigate, activeTab
             <div className="card p-6 mt-6">
               <h2 className="text-lg font-bold text-gray-800 mb-4">Store Information</h2>
               <div className="space-y-2 text-sm text-gray-600">
-                <p><strong>Address:</strong> 123 Meat Street, Food District, City - 123456</p>
                 <p><strong>Phone:</strong> +91 98765 43210</p>
                 <p><strong>Hours:</strong> 9:00 AM - 9:00 PM (Daily)</p>
                 <p className="text-red-700 font-medium mt-3">

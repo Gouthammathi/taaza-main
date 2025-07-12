@@ -6,7 +6,10 @@ import {
   MdSearch,
   MdMoreVert,
   MdExpandMore,
-  MdExpandLess
+  MdExpandLess,
+  MdInventory,
+  MdAddCircle,
+  MdRemoveCircle
 } from 'react-icons/md';
 import { addCategory, getCategories, updateCategory } from '../../services/firebaseService';
 
@@ -31,6 +34,8 @@ const CategoriesManagement = () => {
   const [activeCategory, setActiveCategory] = useState(null);
   const [subActionMenu, setSubActionMenu] = useState({ open: false, categoryId: null, subIndex: null });
   const [detailsModal, setDetailsModal] = useState({ open: false, category: null });
+  const [stockUpdateModal, setStockUpdateModal] = useState({ open: false, category: null });
+  const [stockUpdateData, setStockUpdateData] = useState({ type: 'add', amount: '', pieces: '', pieceCost: '', reason: '' });
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -141,6 +146,82 @@ const CategoriesManagement = () => {
     }
   };
 
+  // Stock update handlers
+  const openStockUpdateModal = (category) => {
+    setStockUpdateModal({ open: true, category });
+    setStockUpdateData({ type: 'add', amount: '', pieces: '', pieceCost: '', reason: '' });
+    setActionMenu({ open: false, categoryId: null, anchor: null });
+  };
+
+  const handleStockUpdate = async (e) => {
+    e.preventDefault();
+    if (!stockUpdateModal.category || !stockUpdateData.amount) return;
+
+    const isEggs = stockUpdateModal.category.name.toLowerCase().includes('egg');
+    const isMasala = stockUpdateModal.category.name.toLowerCase().includes('masala');
+    const currentStock = stockUpdateModal.category.wholeQuantity || 0;
+    const updateAmount = Number(stockUpdateData.amount);
+    let newStock;
+
+    if (stockUpdateData.type === 'add') {
+      newStock = currentStock + updateAmount;
+    } else {
+      newStock = Math.max(0, currentStock - updateAmount);
+    }
+
+    // Prepare update data
+    const updateData = {
+      ...stockUpdateModal.category,
+      wholeQuantity: newStock
+    };
+
+    // For eggs, also store pieces if provided
+    if (isEggs && stockUpdateData.pieces) {
+      updateData.pieces = stockUpdateData.pieces;
+    }
+
+    // For masala, store piece cost if provided
+    if (isMasala && stockUpdateData.pieceCost) {
+      updateData.pieceCost = Number(stockUpdateData.pieceCost);
+    }
+
+    try {
+      await updateCategory(stockUpdateModal.category.id, updateData);
+      
+      // Update local state
+      const updatedCategories = await getCategories();
+      setCategories(updatedCategories);
+      
+      // Close modal and reset
+      setStockUpdateModal({ open: false, category: null });
+      setStockUpdateData({ type: 'add', amount: '', pieces: '', pieceCost: '', reason: '' });
+      
+      // Show success message
+      let unit, additionalInfo = '';
+      if (isEggs) {
+        unit = 'trays';
+        if (stockUpdateData.pieces) additionalInfo = ` (${stockUpdateData.pieces} pieces)`;
+      } else if (isMasala) {
+        unit = 'pieces';
+        if (stockUpdateData.pieceCost) additionalInfo = ` (₹${stockUpdateData.pieceCost}/piece)`;
+      } else {
+        unit = 'kg';
+      }
+      alert(`Stock updated successfully! New quantity: ${newStock} ${unit}${additionalInfo}`);
+    } catch (error) {
+      console.error('Error updating stock:', error);
+      alert('Error updating stock. Please try again.');
+    }
+  };
+
+  // Helper function to get unit for category
+  const getUnitForCategory = (categoryName) => {
+    const name = categoryName.toLowerCase();
+    if (name.includes('egg')) return 'trays';
+    if (name.includes('masala')) return 'pieces';
+    return 'kg';
+  };
+
   const filteredCategories = categories.filter(category =>
     category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     category.key.toLowerCase().includes(searchTerm.toLowerCase())
@@ -192,9 +273,24 @@ const CategoriesManagement = () => {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 leading-tight">{category.name}</h3>
                   <div className="flex gap-2 mt-1">
-                    <span className="text-xs bg-yellow-50 text-yellow-700 rounded-full px-2 py-0.5 font-medium">Qty: {category.wholeQuantity ?? 0} kg</span>
+                    <span className="text-xs bg-yellow-50 text-yellow-700 rounded-full px-2 py-0.5 font-medium">
+                      Qty: {category.wholeQuantity ?? 0} {getUnitForCategory(category.name)}
+                      {category.name.toLowerCase().includes('egg') && category.pieces && ` (${category.pieces} pieces)`}
+                      {category.name.toLowerCase().includes('masala') && category.pieceCost && ` (₹${category.pieceCost}/piece)`}
+                    </span>
                     <span className="text-xs bg-blue-50 text-blue-700 rounded-full px-2 py-0.5 font-medium">{category.subcategories.length} subcategories</span>
                   </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openStockUpdateModal(category);
+                    }}
+                    className="mt-2 text-xs bg-green-100 text-green-700 hover:bg-green-200 rounded-full px-2 py-1 font-medium transition-colors flex items-center gap-1"
+                    title="Quick stock update"
+                  >
+                    <MdInventory className="w-3 h-3" />
+                    Update Stock
+                  </button>
                 </div>
               </div>
               <button
@@ -207,12 +303,19 @@ const CategoriesManagement = () => {
               >
                 <MdMoreVert className="w-6 h-6 text-gray-400" />
               </button>
-              {actionMenu.open && actionMenu.categoryId === category.id && (
-                <div className="absolute right-5 top-16 z-10 bg-white border border-gray-200 rounded-xl shadow-lg w-36">
-                  <button onClick={() => handleEdit(category)} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50">Edit</button>
-                  <button onClick={() => handleDelete(category.id)} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50">Delete</button>
-                </div>
-              )}
+                              {actionMenu.open && actionMenu.categoryId === category.id && (
+                  <div className="absolute right-5 top-16 z-10 bg-white border border-gray-200 rounded-xl shadow-lg w-40">
+                    <button onClick={() => handleEdit(category)} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-2">
+                      <MdEdit className="w-4 h-4" /> Edit
+                    </button>
+                    <button onClick={() => openStockUpdateModal(category)} className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-gray-50 flex items-center gap-2">
+                      <MdInventory className="w-4 h-4" /> Update Stock
+                    </button>
+                    <button onClick={() => handleDelete(category.id)} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 flex items-center gap-2">
+                      <MdDelete className="w-4 h-4" /> Delete
+                    </button>
+                  </div>
+                )}
             </div>
             {/* Subcategory images row */}
             <div className="flex items-center gap-2 mt-4">
@@ -440,7 +543,11 @@ const CategoriesManagement = () => {
               <img src={detailsModal.category.image} alt={detailsModal.category.name} className="w-20 h-20 object-cover rounded-full border-2 border-blue-200 shadow mb-2" />
               <h2 className="text-2xl font-bold text-gray-900 mb-1">{detailsModal.category.name}</h2>
               <div className="text-xs text-gray-500 mb-1">Key: {detailsModal.category.key}</div>
-              <div className="text-xs bg-yellow-50 text-yellow-700 rounded-full px-3 py-0.5 font-medium mb-2">Qty: {detailsModal.category.wholeQuantity ?? 0} kg</div>
+              <div className="text-xs bg-yellow-50 text-yellow-700 rounded-full px-3 py-0.5 font-medium mb-2">
+                Qty: {detailsModal.category.wholeQuantity ?? 0} {getUnitForCategory(detailsModal.category.name)}
+                {detailsModal.category.name.toLowerCase().includes('egg') && detailsModal.category.pieces && ` (${detailsModal.category.pieces} pieces)`}
+                {detailsModal.category.name.toLowerCase().includes('masala') && detailsModal.category.pieceCost && ` (₹${detailsModal.category.pieceCost}/piece)`}
+              </div>
             </div>
             <div className="mb-2 flex items-center justify-between">
               <span className="text-base font-medium text-gray-700">Subcategories</span>
@@ -502,6 +609,178 @@ const CategoriesManagement = () => {
                 Delete Category
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stock Update Modal */}
+      {stockUpdateModal.open && stockUpdateModal.category && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 w-full max-w-md relative shadow-2xl border border-gray-100">
+            <button
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-2xl"
+              onClick={() => setStockUpdateModal({ open: false, category: null })}
+              aria-label="Close"
+            >
+              ×
+            </button>
+            
+            <div className="flex flex-col items-center mb-6">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-3">
+                <MdInventory className="w-8 h-8 text-blue-600" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mb-1">Update Stock</h2>
+              <p className="text-sm text-gray-600 text-center">
+                {stockUpdateModal.category.name} - Current: {stockUpdateModal.category.wholeQuantity ?? 0} {getUnitForCategory(stockUpdateModal.category.name)}
+                {stockUpdateModal.category.name.toLowerCase().includes('egg') && stockUpdateModal.category.pieces && ` (${stockUpdateModal.category.pieces} pieces)`}
+                {stockUpdateModal.category.name.toLowerCase().includes('masala') && stockUpdateModal.category.pieceCost && ` (₹${stockUpdateModal.category.pieceCost}/piece)`}
+              </p>
+            </div>
+
+            <form onSubmit={handleStockUpdate} className="space-y-4">
+              {/* Update Type */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Update Type</label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setStockUpdateData({ ...stockUpdateData, type: 'add' })}
+                    className={`flex-1 py-2 px-3 rounded-lg border-2 font-medium transition-colors ${
+                      stockUpdateData.type === 'add'
+                        ? 'border-green-500 bg-green-50 text-green-700'
+                        : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <MdAddCircle className="w-4 h-4 inline mr-1" />
+                    Add Stock
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStockUpdateData({ ...stockUpdateData, type: 'remove' })}
+                    className={`flex-1 py-2 px-3 rounded-lg border-2 font-medium transition-colors ${
+                      stockUpdateData.type === 'remove'
+                        ? 'border-red-500 bg-red-50 text-red-700'
+                        : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <MdRemoveCircle className="w-4 h-4 inline mr-1" />
+                    Remove Stock
+                  </button>
+                </div>
+              </div>
+
+              {/* Amount */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {stockUpdateModal.category.name.toLowerCase().includes('masala')
+                    ? 'No.of pieces'
+                    : `Amount (${getUnitForCategory(stockUpdateModal.category.name)})`}
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step={stockUpdateModal.category.name.toLowerCase().includes('egg') || stockUpdateModal.category.name.toLowerCase().includes('masala') ? "1" : "0.1"}
+                  value={stockUpdateData.amount}
+                  onChange={(e) => setStockUpdateData({ ...stockUpdateData, amount: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder={`Enter amount to ${stockUpdateData.type}`}
+                  required
+                />
+              </div>
+
+              {/* Pieces field for eggs */}
+              {stockUpdateModal.category.name.toLowerCase().includes('egg') && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Pieces (Optional)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={stockUpdateData.pieces}
+                    onChange={(e) => setStockUpdateData({ ...stockUpdateData, pieces: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Number of individual pieces"
+                  />
+                </div>
+              )}
+
+              {/* Piece cost field for masala */}
+              {stockUpdateModal.category.name.toLowerCase().includes('masala') && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Piece Cost (₹)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={stockUpdateData.pieceCost}
+                    onChange={(e) => setStockUpdateData({ ...stockUpdateData, pieceCost: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Cost per piece"
+                  />
+                </div>
+              )}
+
+              {/* Reason */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Reason (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={stockUpdateData.reason}
+                  onChange={(e) => setStockUpdateData({ ...stockUpdateData, reason: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="e.g., New stock arrival, Sales deduction"
+                />
+              </div>
+
+              {/* Preview */}
+              {stockUpdateData.amount && (
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-sm text-gray-600">
+                    <strong>Preview:</strong> {stockUpdateModal.category.wholeQuantity ?? 0} {getUnitForCategory(stockUpdateModal.category.name)} 
+                    {stockUpdateData.type === 'add' ? ' + ' : ' - '} 
+                    {stockUpdateData.amount} {getUnitForCategory(stockUpdateModal.category.name)} = 
+                    <span className="font-semibold text-blue-700">
+                      {' '}
+                      {stockUpdateData.type === 'add' 
+                        ? (stockUpdateModal.category.wholeQuantity ?? 0) + Number(stockUpdateData.amount)
+                        : Math.max(0, (stockUpdateModal.category.wholeQuantity ?? 0) - Number(stockUpdateData.amount))
+                      } {getUnitForCategory(stockUpdateModal.category.name)}
+                      {stockUpdateModal.category.name.toLowerCase().includes('egg') && stockUpdateData.pieces && ` (${stockUpdateData.pieces} pieces)`}
+                      {stockUpdateModal.category.name.toLowerCase().includes('masala') && stockUpdateData.pieceCost && ` (₹${stockUpdateData.pieceCost}/piece)`}
+                    </span>
+                  </p>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setStockUpdateModal({ open: false, category: null })}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!stockUpdateData.amount}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    stockUpdateData.amount
+                      ? stockUpdateData.type === 'add'
+                        ? 'bg-green-600 text-white hover:bg-green-700'
+                        : 'bg-red-600 text-white hover:bg-red-700'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  {stockUpdateData.type === 'add' ? 'Add Stock' : 'Remove Stock'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

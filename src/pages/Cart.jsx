@@ -104,10 +104,7 @@ const Cart = ({ onNavigateToHome, onNavigateToCheckout, onNavigate, activeTab, c
                 <span className="text-gray-600">Subtotal ({items.reduce((total, item) => total + item.quantity, 0)} items)</span>
                 <span className="font-medium">₹{getTotalPrice()}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Delivery Fee</span>
-                <span className="font-medium">Free</span>
-              </div>
+
               <div className="border-t pt-2">
                 <div className="flex justify-between">
                   <span className="font-bold text-lg">Total</span>

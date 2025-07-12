@@ -5,7 +5,6 @@ import {
   MdTrendingUp,
   MdPeople,
   MdAttachMoney,
-  MdLocalShipping,
   MdCheckCircle,
   MdSchedule
 } from 'react-icons/md';
@@ -160,7 +159,7 @@ const DashboardHome = () => {
               <p className="text-sm font-medium text-gray-600">Processing</p>
               <p className="text-2xl font-bold text-blue-600">{stats.totalOrders - stats.pendingOrders - stats.completedOrders}</p>
             </div>
-            <MdLocalShipping className="w-8 h-8 text-blue-500" />
+            <MdSchedule className="w-8 h-8 text-blue-500" />
           </div>
         </div>
 

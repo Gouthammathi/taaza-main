@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { 
   MdSearch, 
   MdFilterList, 
-  MdLocalShipping,
   MdCheckCircle,
   MdSchedule,
   MdCancel
@@ -34,7 +33,7 @@ const OrdersManagement = () => {
           total: data.total || 0,
           status: data.status || 'pending',
           createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : (data.createdAt || new Date()),
-          address: data.address || '',
+
           paymentMethod: data.paymentMethod || '',
         };
       });
