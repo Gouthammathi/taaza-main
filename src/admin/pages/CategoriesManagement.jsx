@@ -51,7 +51,7 @@ const CategoriesManagement = () => {
       } catch (error) {
         console.error('Error fetching categories:', error);
       }
-      setLoading(false);
+    setLoading(false);
     };
     fetchCategories();
   }, []);
@@ -59,9 +59,9 @@ const CategoriesManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (editingCategory) {
+    if (editingCategory) {
         await updateCategory(editingCategory.id, formData);
-      } else {
+    } else {
         await addCategory({ ...formData, productCount: 0 });
       }
       const updatedCategories = await getCategories();
@@ -93,7 +93,7 @@ const CategoriesManagement = () => {
       try {
         await deleteCategory(categoryId);
         // Update local state after successful deletion
-        setCategories(categories.filter(c => c.id !== categoryId));
+      setCategories(categories.filter(c => c.id !== categoryId));
         // Close any open modals
         setDetailsModal({ open: false, category: null });
         setActionMenu({ open: false, categoryId: null, anchor: null });
@@ -219,13 +219,13 @@ const CategoriesManagement = () => {
       {/* Search */}
       <div className="bg-white rounded border border-gray-200 p-2 flex items-center">
         <MdSearch className="text-gray-400 w-5 h-5 ml-2 mr-2" />
-        <input
-          type="text"
-          placeholder="Search categories..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          <input
+            type="text"
+            placeholder="Search categories..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full bg-transparent outline-none text-sm px-2 py-1"
-        />
+          />
       </div>
       {/* Categories Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -240,9 +240,9 @@ const CategoriesManagement = () => {
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
-                <img
-                  src={category.image}
-                  alt={category.name}
+              <img
+                src={category.image}
+                alt={category.name}
                   className="w-14 h-14 object-cover rounded-full border border-gray-200 bg-gray-50 shadow-sm"
                 />
                 <div>
@@ -250,11 +250,11 @@ const CategoriesManagement = () => {
                   <div className="flex gap-2 mt-1">
                     
                     <span className="text-xs bg-blue-50 text-blue-700 rounded-full px-2 py-0.5 font-medium">{category.subcategories.length} subcategories</span>
-                  </div>
-                 
+            </div>
+            
                 </div>
               </div>
-              <button
+                <button
                 className="cat-kebab p-2 rounded-full hover:bg-gray-100 ml-2"
                 onClick={e => {
                   e.stopPropagation();
@@ -274,10 +274,10 @@ const CategoriesManagement = () => {
                     </button>
                     <button onClick={() => handleDelete(category.id)} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 flex items-center gap-2">
                       <MdDelete className="w-4 h-4" /> Delete
-                    </button>
+                </button>
                   </div>
                 )}
-            </div>
+              </div>
             {/* Subcategory images row */}
             <div className="flex items-center gap-2 mt-4">
               {category.subcategories.slice(0, 3).map((sub, idx) => (
@@ -358,14 +358,14 @@ const CategoriesManagement = () => {
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Key</label>
                 {editingCategory ? (
-                  <input
-                    type="text"
-                    value={formData.key}
-                    onChange={(e) => setFormData({...formData, key: e.target.value})}
+                <input
+                  type="text"
+                  value={formData.key}
+                  onChange={(e) => setFormData({...formData, key: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                    placeholder="e.g., chicken"
-                    required
-                  />
+                  placeholder="e.g., chicken"
+                  required
+                />
                 ) : (
                   <select
                     value={formData.key}

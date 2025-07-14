@@ -342,12 +342,12 @@ const ProductsManagement = () => {
                       <div className="flex items-center gap-3">
                         <img
                           className="h-10 w-10 rounded-lg object-cover border"
-                          src={product.image}
-                          alt={product.name}
-                        />
+                        src={product.image}
+                        alt={product.name}
+                      />
                         <span className="ml-2 font-semibold text-gray-900 truncate">{product.name}</span>
-                      </div>
-                    </td>
+                    </div>
+                  </td>
                     {/* Category */}
                     <td className="px-6 py-4 align-middle">
                       <span className="inline-block bg-blue-100 text-blue-700 text-xs font-medium rounded px-2 py-0.5">{getCategoryName(product.category)}</span>
@@ -496,7 +496,7 @@ const ProductsManagement = () => {
                           <img src={formData.image} alt="Preview" className="mt-2 rounded-lg max-h-24 object-contain border" />
                         )}
                       </div>
-                      <div>
+              <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                         <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" rows={3} placeholder="Product description..." />
                       </div>
@@ -519,7 +519,7 @@ const ProductsManagement = () => {
               <div className="flex-1 overflow-y-auto p-6">
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="flex items-center gap-2">
-                    <div className="flex-1">
+                <div className="flex-1">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
                       <input
                         type="text"
@@ -544,9 +544,9 @@ const ProductsManagement = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                    <select
+                  <select
                       value={formData.category}
-                        onChange={e => {
+                    onChange={e => {
                         const catKey = e.target.value;
                         let unit = formData.unit;
                         if (catKey.toLowerCase().includes('chicken') || catKey.toLowerCase().includes('mutton')) unit = 'kg';
@@ -556,13 +556,13 @@ const ProductsManagement = () => {
                         setFormData({ ...formData, category: catKey, subcategory: '', unit });
                         }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      >
-                        <option value="">Select Category</option>
+                    required
+                  >
+                    <option value="">Select Category</option>
                       {categories.map(cat => (
                         <option key={cat.key} value={cat.key}>{cat.name}</option>
                       ))}
-                      </select>
+                  </select>
                   </div>
                   {/* Only show unit and price/fields if a category is selected */}
                   {formData.category && (
@@ -613,7 +613,7 @@ const ProductsManagement = () => {
                         <div className="flex gap-3">
                           <div className="flex-1">
                             <label className="block text-sm font-medium text-gray-700 mb-1">Price per piece (₹)</label>
-                        <input
+                    <input
                               type="number"
                               min="0"
                               step="0.01"

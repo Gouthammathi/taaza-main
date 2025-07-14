@@ -371,7 +371,7 @@ const Analytics = () => {
             {todayStock && !editMode && (
               <button onClick={() => setEditMode(true)} className="text-blue-600 hover:underline text-sm font-medium">Edit</button>
             )}
-          </div>
+      </div>
           {loading ? (
             <div className="text-gray-500">Loading...</div>
           ) : (!todayStock && !editMode) ? (
@@ -439,7 +439,7 @@ const Analytics = () => {
                     </span>
                   </div>
                 ))}
-              </div>
+                  </div>
               <div className="flex items-center gap-3 mt-4">
                 {editMode && (
                   <button
@@ -456,7 +456,7 @@ const Analytics = () => {
               </div>
             </form>
           ) : (
-            <div className="space-y-4">
+          <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {STOCK_ITEMS.map(item => (
                   <div key={item.key} className="flex flex-col">
@@ -489,7 +489,7 @@ const Analytics = () => {
                   </div>
                 ))}
               </div>
-            </div>
+          </div>
           )}
         </div>
       </div>
@@ -514,4 +514,4 @@ const Analytics = () => {
   );
 };
 
-export default Analytics;
+export default Analytics; 

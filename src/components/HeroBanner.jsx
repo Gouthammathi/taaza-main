@@ -5,7 +5,7 @@ import { collection, getDocs } from 'firebase/firestore';
 const HeroBanner = () => {
   const [banners, setBanners] = useState([]);
   const [currentSlide, setCurrentSlide] = useState(0);
-
+  
   useEffect(() => {
     const fetchBanners = async () => {
       const snap = await getDocs(collection(db, 'banners'));

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getProducts } from '../../services/firebaseService';
 import { addDoc, collection, getDocs, deleteDoc, doc, getDoc, setDoc, runTransaction } from 'firebase/firestore';
 import { db } from '../../config/firebase';
@@ -52,6 +52,8 @@ function Billing() {
   const [keypadStandalone, setKeypadStandalone] = useState(false);
   const [standaloneKeypadValue, setStandaloneKeypadValue] = useState('');
   const [keypadType, setKeypadType] = useState('numeric');
+  const [showPrintReceipt, setShowPrintReceipt] = useState(false);
+  const printRef = useRef();
 
   // Calculate totals
   const totalQty = currentBill.products.reduce((sum, p) => sum + Number(p.qty), 0);
@@ -100,6 +102,16 @@ function Billing() {
     document.addEventListener('keydown', handleKeydown);
     return () => document.removeEventListener('keydown', handleKeydown);
   }, [showKeypad, keypadStandalone]);
+
+  // Print handler
+  useEffect(() => {
+    if (showPrintReceipt) {
+      setTimeout(() => {
+        window.print();
+        setShowPrintReceipt(false);
+      }, 200);
+    }
+  }, [showPrintReceipt]);
 
   // Client-side search on SEARCH button click
   const handleSearch = () => {
@@ -718,7 +730,7 @@ function Billing() {
         </div>
       )}
       {/* Centered Order Paid Popup */}
-      {orderPaid && (
+      {orderPaid && !showPrintReceipt && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
           <div className="bg-white p-10 rounded-2xl shadow-2xl max-w-2xl w-full mx-4 flex flex-col gap-6">
             <div className="flex items-center justify-center gap-3">
@@ -783,6 +795,53 @@ function Billing() {
             >
               Close
             </button>
+            {orderPaid.withReceipt && (
+              <button
+                className="mt-2 px-8 py-2 bg-blue-600 text-white rounded-lg font-semibold text-lg hover:bg-blue-700 transition block mx-auto"
+                onClick={() => setShowPrintReceipt(true)}
+              >
+                Print Receipt
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      {/* Printable Receipt (hidden except for print) */}
+      {orderPaid && showPrintReceipt && (
+        <div ref={printRef} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', zIndex: 9999, background: 'white', padding: 0, margin: 0 }}>
+          <div style={{ maxWidth: 320, margin: '0 auto', fontFamily: 'monospace', fontSize: 16, padding: 16 }}>
+            <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: 20, marginBottom: 8 }}>RECEIPT</div>
+            <div>Order ID: <b>{orderPaid.orderId}</b></div>
+            <div>Date: {new Date(orderPaid.createdAt).toLocaleString()}</div>
+            <div>Payment: {orderPaid.paymentMethod}</div>
+            <hr style={{ margin: '8px 0' }} />
+            <div style={{ fontWeight: 'bold', marginBottom: 4 }}>Products</div>
+            <table style={{ width: '100%', fontSize: 15 }}>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: 'left' }}>Name</th>
+                  <th style={{ textAlign: 'center' }}>Qty</th>
+                  <th style={{ textAlign: 'center' }}>Wt</th>
+                  <th style={{ textAlign: 'right' }}>Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orderPaid.products.map((p, i) => (
+                  <tr key={i}>
+                    <td>{p.name}</td>
+                    <td style={{ textAlign: 'center' }}>{p.qty}</td>
+                    <td style={{ textAlign: 'center' }}>{p.weight}kg</td>
+                    <td style={{ textAlign: 'right' }}>₹{p.total}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <hr style={{ margin: '8px 0' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: 18 }}>
+              <span>Total:</span>
+              <span>₹{orderPaid.total.toFixed(2)}</span>
+            </div>
+            <div style={{ textAlign: 'center', marginTop: 12, fontSize: 14 }}>Thank you for your purchase!</div>
           </div>
         </div>
       )}
