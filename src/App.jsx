@@ -6,17 +6,31 @@ import { UserAuthProvider } from './context/UserAuthContext';
 import UserRoutes from './routes/UserRoutes';
 import AdminRoutes from './admin/AdminRoutes';
 import Login from './pages/Login';
-
+ 
 function RequireAdmin({ children }) {
-  const { admin } = useAdmin();
+  const { admin, loading } = useAdmin();
   const location = useLocation();
+ 
+  // Show loading spinner while checking authentication
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+ 
+  // If not admin and not loading, redirect to login
   if (!admin) {
-    // Not logged in as admin, redirect to login
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
+ 
   return children;
 }
-
+ 
 const App = () => (
   <AdminProvider>
     <CartProvider>
@@ -37,5 +51,5 @@ const App = () => (
     </CartProvider>
   </AdminProvider>
 );
-
+ 
 export default App;

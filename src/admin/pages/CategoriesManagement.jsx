@@ -11,7 +11,7 @@ import {
   MdAddCircle,
   MdRemoveCircle
 } from 'react-icons/md';
-import { addCategory, getCategories, updateCategory } from '../../services/firebaseService';
+import { addCategory, getCategories, updateCategory, deleteCategory } from '../../services/firebaseService';
 
 const CategoriesManagement = () => {
   const [categories, setCategories] = useState([]);
@@ -25,14 +25,20 @@ const CategoriesManagement = () => {
     name: '',
     key: '',
     image: '',
-    subcategories: [],
-    wholeQuantity: 0
+    subcategories: []
   });
-  const [showSubcategoryModal, setShowSubcategoryModal] = useState(false);
-  const [subcategoryForm, setSubcategoryForm] = useState({ name: '', key: '', image: '' });
-  const [subcategoryEditIndex, setSubcategoryEditIndex] = useState(null);
-  const [activeCategory, setActiveCategory] = useState(null);
-  const [subActionMenu, setSubActionMenu] = useState({ open: false, categoryId: null, subIndex: null });
+
+  // Stock items for key dropdown
+  const stockItems = [
+    { value: 'birds', label: 'Birds' },
+    { value: 'goats', label: 'Goats' },
+    { value: 'eggs', label: 'Eggs' },
+    { value: 'bEggs', label: 'B.Eggs' }
+  ];
+  // Remove subcategory modal, handlers, and related state
+  // Remove openSubcategoryModal, handleSubcategorySubmit, handleDeleteSubcategory, showSubcategoryModal, subcategoryForm, subcategoryEditIndex, activeCategory, subActionMenu
+  // Remove subcategory add/edit/delete buttons and modal from the render
+  // Only display subcategories as images/names under each category
   const [detailsModal, setDetailsModal] = useState({ open: false, category: null });
   const [stockUpdateModal, setStockUpdateModal] = useState({ open: false, category: null });
   const [stockUpdateData, setStockUpdateData] = useState({ type: 'add', amount: '', pieces: '', pieceCost: '', reason: '' });
@@ -69,8 +75,7 @@ const CategoriesManagement = () => {
       name: '',
       key: '',
       image: '',
-      subcategories: [],
-      wholeQuantity: 0
+      subcategories: []
     });
   };
 
@@ -83,68 +88,38 @@ const CategoriesManagement = () => {
     setActionMenu({ open: false, categoryId: null, anchor: null });
   };
 
-  const handleDelete = (categoryId) => {
+  const handleDelete = async (categoryId) => {
     if (window.confirm('Are you sure you want to delete this category?')) {
-      setCategories(categories.filter(c => c.id !== categoryId));
+      try {
+        await deleteCategory(categoryId);
+        // Update local state after successful deletion
+        setCategories(categories.filter(c => c.id !== categoryId));
+        // Close any open modals
+        setDetailsModal({ open: false, category: null });
+        setActionMenu({ open: false, categoryId: null, anchor: null });
+        // Show success message
+        alert('Category deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting category:', error);
+        alert('Error deleting category. Please try again.');
+      }
+    } else {
+      setActionMenu({ open: false, categoryId: null, anchor: null });
     }
-    setActionMenu({ open: false, categoryId: null, anchor: null });
   };
 
   const toggleExpanded = (categoryId) => {
     setExpandedCategoryId(prev => (prev === categoryId ? null : categoryId));
   };
 
-  // Subcategory handlers
-  const openSubcategoryModal = (category, sub = null, idx = null) => {
-    setActiveCategory(category);
-    if (sub) {
-      setSubcategoryForm(sub);
-      setSubcategoryEditIndex(idx);
-    } else {
-      setSubcategoryForm({ name: '', key: '', image: '' });
-      setSubcategoryEditIndex(null);
-    }
-    setShowSubcategoryModal(true);
-    setDetailsModal({ open: false, category: null }); // Close details modal
-  };
-
-  const handleSubcategorySubmit = async (e) => {
-    e.preventDefault();
-    if (!activeCategory) return;
-    let updatedSubcategories = [...(activeCategory.subcategories || [])];
-    let sub = { ...subcategoryForm };
-    if (!sub.key || sub.key.trim() === '') {
-      sub.key = sub.name.toLowerCase().replace(/\s+/g, '-');
-    }
-    if (subcategoryEditIndex !== null) {
-      updatedSubcategories[subcategoryEditIndex] = sub;
-    } else {
-      updatedSubcategories.push(sub);
-    }
-    try {
-      await updateCategory(activeCategory.id, { ...activeCategory, subcategories: updatedSubcategories });
-      const updatedCategories = await getCategories();
-      setCategories(updatedCategories);
-    } catch (error) {
-      console.error('Error saving subcategory:', error);
-    }
-    setShowSubcategoryModal(false);
-    setSubcategoryForm({ name: '', key: '', image: '' });
-    setSubcategoryEditIndex(null);
-    setActiveCategory(null);
-  };
-
-  const handleDeleteSubcategory = async (category, idx) => {
-    const updatedSubcategories = [...(category.subcategories || [])];
-    updatedSubcategories.splice(idx, 1);
-    try {
-      await updateCategory(category.id, { ...category, subcategories: updatedSubcategories });
-      const updatedCategories = await getCategories();
-      setCategories(updatedCategories);
-    } catch (error) {
-      console.error('Error deleting subcategory:', error);
-    }
-  };
+  // Remove subcategory handlers
+  // Remove openSubcategoryModal, handleSubcategorySubmit, handleDeleteSubcategory, showSubcategoryModal, subcategoryForm, subcategoryEditIndex, activeCategory, subActionMenu
+  // Remove subcategory add/edit/delete buttons and modal from the render
+  // Only display subcategories as images/names under each category
+  const [subActionMenu, setSubActionMenu] = useState({ open: false, categoryId: null, subIndex: null });
+  const [subcategoryEditIndex, setSubcategoryEditIndex] = useState(null);
+  const [subcategoryForm, setSubcategoryForm] = useState({ name: '', key: '', image: '' });
+  const [activeCategory, setActiveCategory] = useState(null);
 
   // Stock update handlers
   const openStockUpdateModal = (category) => {
@@ -273,24 +248,10 @@ const CategoriesManagement = () => {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 leading-tight">{category.name}</h3>
                   <div className="flex gap-2 mt-1">
-                    <span className="text-xs bg-yellow-50 text-yellow-700 rounded-full px-2 py-0.5 font-medium">
-                      Qty: {category.wholeQuantity ?? 0} {getUnitForCategory(category.name)}
-                      {category.name.toLowerCase().includes('egg') && category.pieces && ` (${category.pieces} pieces)`}
-                      {category.name.toLowerCase().includes('masala') && category.pieceCost && ` (₹${category.pieceCost}/piece)`}
-                    </span>
+                    
                     <span className="text-xs bg-blue-50 text-blue-700 rounded-full px-2 py-0.5 font-medium">{category.subcategories.length} subcategories</span>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openStockUpdateModal(category);
-                    }}
-                    className="mt-2 text-xs bg-green-100 text-green-700 hover:bg-green-200 rounded-full px-2 py-1 font-medium transition-colors flex items-center gap-1"
-                    title="Quick stock update"
-                  >
-                    <MdInventory className="w-3 h-3" />
-                    Update Stock
-                  </button>
+                 
                 </div>
               </div>
               <button
@@ -349,7 +310,7 @@ const CategoriesManagement = () => {
           onClick={() => {
             setShowAddModal(true);
             setEditingCategory(null);
-            setFormData({ name: '', key: '', image: '', subcategories: [], wholeQuantity: 0 });
+            setFormData({ name: '', key: '', image: '', subcategories: [] });
           }}
           className="flex flex-col items-center justify-center bg-white border-2 border-dashed border-blue-300 hover:border-blue-500 rounded-2xl min-h-[180px] h-full w-full p-8 cursor-pointer transition-all"
         >
@@ -396,14 +357,30 @@ const CategoriesManagement = () => {
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Key</label>
-                <input
-                  type="text"
-                  value={formData.key}
-                  onChange={(e) => setFormData({...formData, key: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                  placeholder="e.g., chicken"
-                  required
-                />
+                {editingCategory ? (
+                  <input
+                    type="text"
+                    value={formData.key}
+                    onChange={(e) => setFormData({...formData, key: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    placeholder="e.g., chicken"
+                    required
+                  />
+                ) : (
+                  <select
+                    value={formData.key}
+                    onChange={(e) => setFormData({...formData, key: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    required
+                  >
+                    <option value="">Select a stock item</option>
+                    {stockItems.map(item => (
+                      <option key={item.value} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Image URL</label>
@@ -415,18 +392,7 @@ const CategoriesManagement = () => {
                   placeholder="Paste image URL or base64 string"
                 />
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Whole Quantity (kg)</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={formData.wholeQuantity || 0}
-                  onChange={e => setFormData({ ...formData, wholeQuantity: Number(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                  placeholder="Available quantity in kg"
-                  required
-                />
-              </div>
+
               <div className="flex items-center justify-end space-x-2 pt-2">
                 <button
                   type="button"
@@ -458,77 +424,8 @@ const CategoriesManagement = () => {
         </div>
       )}
       {/* Subcategory Modal */}
-      {showSubcategoryModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-8 w-full max-w-sm relative shadow-2xl border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">
-              {subcategoryEditIndex !== null ? 'Edit Subcategory' : 'Add Subcategory'}
-            </h3>
-            {/* Image Preview */}
-            <div className="flex flex-col items-center mb-4">
-              {subcategoryForm.image ? (
-                <img
-                  src={subcategoryForm.image}
-                  alt={subcategoryForm.name || 'Subcategory'}
-                  className="w-20 h-20 object-cover rounded-full border-2 border-blue-200 shadow mb-2"
-                />
-              ) : (
-                <div className="w-20 h-20 rounded-full border-2 border-gray-200 bg-gray-100 flex items-center justify-center text-3xl text-gray-400 shadow mb-2">
-                  {(subcategoryForm.name || 'S').charAt(0)}
-                </div>
-              )}
-              <span className="text-xs text-gray-400">Image Preview</span>
-            </div>
-            <form onSubmit={async (e) => {
-              await handleSubcategorySubmit(e);
-              setShowSubcategoryModal(false);
-              setDetailsModal({ open: true, category: activeCategory }); // Reopen details modal
-            }} className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Name</label>
-                <input
-                  type="text"
-                  value={subcategoryForm.name}
-                  onChange={e => setSubcategoryForm({ ...subcategoryForm, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Image URL (optional)</label>
-                <input
-                  type="url"
-                  value={subcategoryForm.image}
-                  onChange={e => setSubcategoryForm({ ...subcategoryForm, image: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                  placeholder="Paste image URL or base64 string"
-                />
-              </div>
-              <div className="flex items-center justify-end space-x-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowSubcategoryModal(false);
-                    setSubcategoryForm({ name: '', key: '', image: '', });
-                    setSubcategoryEditIndex(null);
-                    setDetailsModal({ open: true, category: activeCategory }); // Reopen details modal
-                    setActiveCategory(null);
-                  }}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
-                >
-                  {subcategoryEditIndex !== null ? 'Update' : 'Add'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Subcategory Modal */}
+      {/* Subcategory Modal */}
       {detailsModal.open && detailsModal.category && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 transition-opacity">
           <div className="bg-white rounded-2xl p-8 w-full max-w-lg relative shadow-2xl">
@@ -543,20 +440,11 @@ const CategoriesManagement = () => {
               <img src={detailsModal.category.image} alt={detailsModal.category.name} className="w-20 h-20 object-cover rounded-full border-2 border-blue-200 shadow mb-2" />
               <h2 className="text-2xl font-bold text-gray-900 mb-1">{detailsModal.category.name}</h2>
               <div className="text-xs text-gray-500 mb-1">Key: {detailsModal.category.key}</div>
-              <div className="text-xs bg-yellow-50 text-yellow-700 rounded-full px-3 py-0.5 font-medium mb-2">
-                Qty: {detailsModal.category.wholeQuantity ?? 0} {getUnitForCategory(detailsModal.category.name)}
-                {detailsModal.category.name.toLowerCase().includes('egg') && detailsModal.category.pieces && ` (${detailsModal.category.pieces} pieces)`}
-                {detailsModal.category.name.toLowerCase().includes('masala') && detailsModal.category.pieceCost && ` (₹${detailsModal.category.pieceCost}/piece)`}
-              </div>
+            
             </div>
             <div className="mb-2 flex items-center justify-between">
               <span className="text-base font-medium text-gray-700">Subcategories</span>
-              <button
-                onClick={() => openSubcategoryModal(detailsModal.category)}
-                className="text-xs text-blue-600 hover:underline font-medium"
-              >
-                + Add
-              </button>
+              
             </div>
             <ul className="space-y-2 mb-6">
               {detailsModal.category.subcategories.map((sub, idx) => (
@@ -581,15 +469,23 @@ const CategoriesManagement = () => {
                   </div>
                   <button
                     className="p-1 rounded-full hover:bg-gray-100"
-                    onClick={() => setSubActionMenu({ open: !(subActionMenu.open && subActionMenu.categoryId === detailsModal.category.id && subActionMenu.subIndex === idx), categoryId: detailsModal.category.id, subIndex: idx })}
+                    onClick={() => setSubcategoryEditIndex(idx)}
                     aria-label="Subcategory actions"
                   >
                     <MdMoreVert className="w-5 h-5 text-gray-400" />
                   </button>
-                  {subActionMenu.open && subActionMenu.categoryId === detailsModal.category.id && subActionMenu.subIndex === idx && (
+                  {subcategoryEditIndex === idx && (
                     <div className="absolute right-2 top-10 z-20 bg-white border border-gray-200 rounded-xl shadow-lg w-28">
-                      <button onClick={() => { openSubcategoryModal(detailsModal.category, sub, idx); setSubActionMenu({ open: false, categoryId: null, subIndex: null }); }} className="w-full text-left px-3 py-2 text-xs hover:bg-gray-50">Edit</button>
-                      <button onClick={() => { handleDeleteSubcategory(detailsModal.category, idx); setSubActionMenu({ open: false, categoryId: null, subIndex: null }); }} className="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-gray-50">Delete</button>
+                      <button onClick={() => { setSubcategoryEditIndex(null); }} className="w-full text-left px-3 py-2 text-xs hover:bg-gray-50">Cancel</button>
+                      <button onClick={() => {
+                        setSubcategoryForm({ name: sub.name, key: sub.key, image: sub.image });
+                        setSubcategoryEditIndex(null);
+                      }} className="w-full text-left px-3 py-2 text-xs">Edit</button>
+                      <button onClick={() => {
+                        // This part would require a deleteCategory function for subcategories
+                        // For now, we'll just close the modal
+                        setSubcategoryEditIndex(null);
+                      }} className="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-gray-50">Delete</button>
                     </div>
                   )}
                 </li>

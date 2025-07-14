@@ -10,7 +10,7 @@ import {
   MdStar,
   MdStarBorder
 } from 'react-icons/md';
-import { getProducts, addProduct, updateProduct, deleteProduct, getCategories } from '../../services/firebaseService';
+import { getProducts, addProduct, updateProduct, deleteProduct, getCategories, updateCategory } from '../../services/firebaseService';
 
 // Utility to remove undefined and empty string fields
 function cleanObject(obj) {
@@ -114,6 +114,17 @@ const ProductsManagement = () => {
         await updateProduct(editingProduct.id, cleanObject(productData));
       } else {
         await addProduct(cleanObject(productData));
+        // Add as subcategory to the selected category
+        const cat = categories.find(c => c.key === formData.category);
+        if (cat) {
+          const newSub = {
+            name: formData.name,
+            key: formData.name.toLowerCase().replace(/\s+/g, '-'),
+            image: imageBase64
+          };
+          const updatedSubs = Array.isArray(cat.subcategories) ? [...cat.subcategories, newSub] : [newSub];
+          await updateCategory(cat.id, { ...cat, subcategories: updatedSubs });
+        }
       }
       const data = await getProducts();
       setProducts(data);

@@ -27,6 +27,7 @@ const OrdersManagement = () => {
         const data = doc.data();
         return {
           id: data.orderId || doc.id,
+          docId: doc.id, // <-- Add this line
           customer: data.customer || '',
           email: data.email || '',
           phone: data.phone || '',
@@ -291,7 +292,7 @@ const OrdersManagement = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setSelectedOrder(order)}>
+                <tr key={order.docId || order.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setSelectedOrder(order)}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">#{order.id}</div>
                   </td>
@@ -310,8 +311,17 @@ const OrdersManagement = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center space-x-2">
                       <button
-                        onClick={e => { e.stopPropagation(); setDeleteConfirm(order); }}
-                        className="text-red-600 hover:text-red-900 p-1"
+                        onClick={e => {
+                          e.stopPropagation();
+                          if (!order.docId) {
+                            alert('Cannot delete: Missing Firestore document ID.');
+                            return;
+                          }
+                          setDeleteConfirm(order);
+                        }}
+                        className={`text-red-600 hover:text-red-900 p-1 ${!order.docId ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        disabled={!order.docId}
+                        title={!order.docId ? 'Cannot delete: Missing Firestore document ID.' : ''}
                       >
                         Delete
                       </button>
@@ -339,10 +349,17 @@ const OrdersManagement = () => {
               </button>
                     <button
                 className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                onClick={async () => {
-                  await deleteDoc(doc(db, 'orders', deleteConfirm.id));
-                  setDeleteConfirm(null);
-                    }}
+                onClick={async (e) => {
+                  e.stopPropagation(); // Prevent row click
+                  console.log('Attempting to delete order with docId:', deleteConfirm?.docId, 'and id:', deleteConfirm?.id);
+                  try {
+                    await deleteDoc(doc(db, 'orders', deleteConfirm.docId));
+                    setDeleteConfirm(null);
+                  } catch (err) {
+                    console.error('Delete failed:', err);
+                    alert('Failed to delete order. Check console for details.');
+                  }
+                }}
               >
                 Delete
                   </button>
