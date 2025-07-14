@@ -809,39 +809,74 @@ function Billing() {
       {/* Printable Receipt (hidden except for print) */}
       {orderPaid && showPrintReceipt && (
         <div ref={printRef} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', zIndex: 9999, background: 'white', padding: 0, margin: 0 }}>
-          <div style={{ maxWidth: 320, margin: '0 auto', fontFamily: 'monospace', fontSize: 16, padding: 16 }}>
-            <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: 20, marginBottom: 8 }}>RECEIPT</div>
-            <div>Order ID: <b>{orderPaid.orderId}</b></div>
-            <div>Date: {new Date(orderPaid.createdAt).toLocaleString()}</div>
-            <div>Payment: {orderPaid.paymentMethod}</div>
-            <hr style={{ margin: '8px 0' }} />
-            <div style={{ fontWeight: 'bold', marginBottom: 4 }}>Products</div>
-            <table style={{ width: '100%', fontSize: 15 }}>
-              <thead>
-                <tr>
-                  <th style={{ textAlign: 'left' }}>Name</th>
-                  <th style={{ textAlign: 'center' }}>Qty</th>
-                  <th style={{ textAlign: 'center' }}>Wt</th>
-                  <th style={{ textAlign: 'right' }}>Subtotal</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orderPaid.products.map((p, i) => (
-                  <tr key={i}>
-                    <td>{p.name}</td>
-                    <td style={{ textAlign: 'center' }}>{p.qty}</td>
-                    <td style={{ textAlign: 'center' }}>{p.weight}kg</td>
-                    <td style={{ textAlign: 'right' }}>₹{p.total}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <hr style={{ margin: '8px 0' }} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: 18 }}>
-              <span>Total:</span>
-              <span>₹{orderPaid.total.toFixed(2)}</span>
+          <div
+            style={{
+              maxWidth: 300,
+              margin: '0 auto',
+              fontFamily: 'monospace',
+              fontSize: 15,
+              padding: 12,
+              border: '1px solid #eee',
+              background: 'white',
+            }}
+          >
+            <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: 18, marginBottom: 2 }}>
+              TAAZA CHIKEN AND MUTTON
             </div>
-            <div style={{ textAlign: 'center', marginTop: 12, fontSize: 14 }}>Thank you for your purchase!</div>
+            <div style={{ textAlign: 'center', fontSize: 13, marginBottom: 4 }}>
+              PH.NO: 8008469048
+            </div>
+            <hr style={{ margin: '4px 0' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+              <span>TIME:{' '}{new Date(orderPaid.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              <span>DATE:{' '}{new Date(orderPaid.createdAt).toLocaleDateString('en-GB')}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+              <span>BILL:{orderPaid.orderId.replace('ADM-', 'A/')}</span>
+              <span>BILL TYPE:RETAIL</span>
+            </div>
+            <hr style={{ margin: '4px 0' }} />
+            <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: 14, margin: '4px 0' }}>
+              BILL OF SUPPLY
+            </div>
+            <div style={{ fontSize: 13, margin: '4px 0', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between' }}>
+              <span>ITEM</span>
+              <span>MRP</span>
+              <span>RATE</span>
+              <span>QTY</span>
+              <span>TOTAL</span>
+            </div>
+            <hr style={{ margin: '4px 0' }} />
+            {orderPaid.products.map((p, i) => (
+              <div key={i} style={{ fontSize: 13, display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                <span style={{ width: 60, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                <span style={{ width: 38, textAlign: 'right' }}>{Number(p.pricePerKg || p.amount).toFixed(2)}</span>
+                <span style={{ width: 38, textAlign: 'right' }}>{Number(p.pricePerKg || p.amount).toFixed(2)}</span>
+                <span style={{ width: 28, textAlign: 'right' }}>{p.weight || p.qty}</span>
+                <span style={{ width: 44, textAlign: 'right' }}>{Number(p.total).toFixed(2)}</span>
+              </div>
+            ))}
+            <hr style={{ margin: '4px 0' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: 15 }}>
+              <span>TOTAL :</span>
+              <span>{orderPaid.products.length}/
+                {orderPaid.products.reduce((sum, p) => sum + Number(p.weight || p.qty), 0)}
+              </span>
+              <span style={{ marginLeft: 'auto' }}>{orderPaid.total.toFixed(2)}</span>
+            </div>
+            <div style={{ fontSize: 13, margin: '4px 0' }}>
+              TENDERED
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+              <span>{orderPaid.paymentMethod.toUpperCase()}</span>
+              <span>{orderPaid.total.toFixed(2)}</span>
+            </div>
+            <div style={{ fontSize: 13, margin: '4px 0' }}>
+              REDEEM POINTS(OPTS) 0.00
+            </div>
+            <div style={{ textAlign: 'center', marginTop: 10, fontSize: 13 }}>
+              THANK YOU....VIST AGAIN
+            </div>
           </div>
         </div>
       )}
