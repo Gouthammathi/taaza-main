@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   MdSearch, 
   MdFilterList, 
@@ -19,6 +19,11 @@ const OrdersManagement = () => {
   const [summaryModal, setSummaryModal] = useState(false);
   const [summaryData, setSummaryData] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [billOrder, setBillOrder] = useState(null); // For bill popup
+  const [showPrintReceipt, setShowPrintReceipt] = useState(false);
+  const printRef = useRef();
+  const printingRef = useRef(false);
+  const [printOrder, setPrintOrder] = useState(null); // order to print
 
   useEffect(() => {
     // Real-time Firestore listener
@@ -44,6 +49,17 @@ const OrdersManagement = () => {
     });
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (showPrintReceipt && !printingRef.current) {
+      printingRef.current = true;
+      setTimeout(() => {
+        window.print();
+        setShowPrintReceipt(false);
+        printingRef.current = false;
+      }, 200);
+    }
+  }, [showPrintReceipt]);
 
   // Helper to get start/end of today, week, month
   function getDateRange(type) {
@@ -181,6 +197,26 @@ const OrdersManagement = () => {
     XLSX.writeFile(wb, 'order_summary.xlsx');
   }
 
+  // Export filtered orders to Excel (flat table)
+  function exportFilteredOrdersToExcel() {
+    const wsData = [
+      ['Order ID', 'Customer', 'Phone', 'Total', 'Payment Method', 'Date', 'Items'],
+      ...filteredOrders.map(order => [
+        order.id,
+        order.customer,
+        order.phone,
+        order.total,
+        order.paymentMethod,
+        formatDate(order.createdAt),
+        order.items.map(item => item.name).join(', ')
+      ])
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Orders');
+    XLSX.writeFile(wb, 'orders_filtered.xlsx');
+  }
+
   // Show summary modal
   function showSummaryModal() {
     const { summary, overallTotal, overallQty, overallWeight, overallOrderCount, overallCash, overallOnline } = getSummary(filteredOrders);
@@ -206,7 +242,7 @@ const OrdersManagement = () => {
         </button>
         <button
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold"
-          onClick={exportSummaryToExcel}
+          onClick={exportFilteredOrdersToExcel}
         >
           Export Excel
         </button>
@@ -287,7 +323,8 @@ const OrdersManagement = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Mode</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bill</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -310,22 +347,18 @@ const OrdersManagement = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center space-x-2">
-                      <button
-                        onClick={e => {
-                          e.stopPropagation();
-                          if (!order.docId) {
-                            alert('Cannot delete: Missing Firestore document ID.');
-                            return;
-                          }
-                          setDeleteConfirm(order);
-                        }}
-                        className={`text-red-600 hover:text-red-900 p-1 ${!order.docId ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        disabled={!order.docId}
-                        title={!order.docId ? 'Cannot delete: Missing Firestore document ID.' : ''}
-                      >
-                        Delete
-                      </button>
+                      {/* Payment Mode instead of Delete */}
+                      <span className={`px-3 py-1 rounded text-xs font-semibold ${order.paymentMethod.toLowerCase() === 'cash' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                        {order.paymentMethod.toLowerCase() === 'cash' ? 'Cash' : 'Online'}
+                      </span>
                     </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    {order.id && order.id.startsWith('CUS-') && (
+                      <button onClick={e => { e.stopPropagation(); setBillOrder(order); }} title="Generate Bill" className="text-green-600 hover:text-green-800 text-2xl">
+                        <MdCheckCircle />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -481,6 +514,153 @@ const OrdersManagement = () => {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bill/Receipt Popup */}
+      {billOrder && !showPrintReceipt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white p-8 rounded-xl shadow-xl max-w-md w-full mx-4 flex flex-col items-center">
+            <h2 className="text-xl font-bold mb-4">Order Bill</h2>
+            {/* Simple Bill/Receipt Layout (reuse Billing print JSX as needed) */}
+            <div className="w-full text-sm font-mono bg-gray-50 border rounded p-4 mb-4">
+              <div className="text-center font-bold text-lg mb-2">TAAZA CHIKEN AND MUTTON</div>
+              <div className="text-center text-xs mb-2">PH.NO: 8008469048</div>
+              <div className="flex justify-between text-xs mb-1"><span>Order:</span><span>{billOrder.id}</span></div>
+              <div className="flex justify-between text-xs mb-1"><span>Date:</span><span>{formatDate(billOrder.createdAt)}</span></div>
+              <div className="flex justify-between text-xs mb-1"><span>Payment:</span><span>{billOrder.paymentMethod}</span></div>
+              <hr className="my-2" />
+              <div className="font-semibold mb-1">Items</div>
+              <table className="w-full text-xs mb-2">
+                <thead>
+                  <tr>
+                    <th className="text-left">Name</th>
+                    <th className="text-right">Qty</th>
+                    <th className="text-right">Price</th>
+                    <th className="text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {billOrder.items.map((item, idx) => (
+                    <tr key={idx}>
+                      <td>{item.name}</td>
+                      <td className="text-right">{item.qty || item.quantity}</td>
+                      <td className="text-right">₹{item.price || item.pricePerKg}</td>
+                      <td className="text-right">₹{item.total}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="flex justify-between font-bold text-base mt-2">
+                <span>Total</span>
+                <span>₹{billOrder.total}</span>
+              </div>
+            </div>
+            <button
+              className="mt-2 px-8 py-2 bg-blue-600 text-white rounded-lg font-semibold text-lg hover:bg-blue-700 transition block mx-auto"
+              onClick={() => {
+                setPrintOrder(billOrder);
+                setShowPrintReceipt(true);
+              }}
+            >
+              Print Receipt
+            </button>
+            <button
+              className="mt-2 px-8 py-2 bg-gray-400 text-white rounded-lg font-semibold text-lg hover:bg-gray-500 transition block mx-auto"
+              onClick={() => setBillOrder(null)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+      {/* Printable Receipt (hidden except for print) */}
+      {printOrder && showPrintReceipt && (
+        <div id="receipt-print-area" ref={printRef} style={{ width: '100vw', zIndex: 9999, background: 'white', padding: 0, margin: 0 }}>
+          <div
+            style={{
+              maxWidth: 220,
+              margin: '0 auto',
+              fontFamily: 'monospace',
+              fontSize: 12,
+              lineHeight: 1.1,
+              padding: 4,
+              background: 'white',
+            }}
+          >
+            {/* Header */}
+            <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: 14, lineHeight: 1.1 }}>TAAZA CHIKEN AND MUTTON</div>
+            <div style={{ textAlign: 'center', fontSize: 11, marginBottom: 1, lineHeight: 1.1 }}>PH.NO: 8008469048</div>
+            <div style={{ borderTop: '1px dashed #222', margin: '2px 0' }} />
+            {/* Time, Date, Bill, Type */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, lineHeight: 1.1 }}>
+              <span>TIME:{' '}{new Date(printOrder.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              <span>DATE:{' '}{new Date(printOrder.createdAt).toLocaleDateString('en-GB')}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 1, lineHeight: 1.1 }}>
+              <span>BILL:{printOrder.id.replace('CUS-', 'C/')}</span>
+              <span>BILL TYPE:RETAIL</span>
+            </div>
+            <div style={{ borderTop: '1px dashed #222', margin: '2px 0' }} />
+            {/* Section Title */}
+            <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: 12, margin: '2px 0', lineHeight: 1.1 }}>BILL OF SUPPLY</div>
+            <div style={{ borderTop: '1px dashed #222', margin: '2px 0' }} />
+            {/* Table Header */}
+            <div style={{ fontSize: 11, fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', lineHeight: 1.1 }}>
+              <span style={{ width: 80 }}>HSN CODE/ITEM NAME</span>
+              <span style={{ width: 36, textAlign: 'right' }}>MRP</span>
+              <span style={{ width: 36, textAlign: 'right' }}>RATE</span>
+              <span style={{ width: 26, textAlign: 'right' }}>QTY</span>
+              <span style={{ width: 40, textAlign: 'right' }}>TOTAL</span>
+            </div>
+            <div style={{ borderTop: '1px dashed #222', margin: '2px 0' }} />
+            {/* Product Rows */}
+            {printOrder.items.map((p, i) => (
+              <div key={i} style={{ marginBottom: 1 }}>
+                <div style={{ fontSize: 11, display: 'flex', justifyContent: 'flex-start', lineHeight: 1.1 }}>
+                  <span style={{ width: 70, fontWeight: 'bold' }}>{p.name}</span>
+                </div>
+                <div style={{ fontSize: 11, display: 'flex', justifyContent: 'space-between', lineHeight: 1.1 }}>
+                  <span style={{ width: 70 }}></span>
+                  <span style={{ width: 36, textAlign: 'right' }}>{Number(p.pricePerKg || p.price).toFixed(2)}</span>
+                  <span style={{ width: 36, textAlign: 'right' }}>{Number(p.pricePerKg || p.price).toFixed(2)}</span>
+                  <span style={{ width: 26, textAlign: 'right' }}>{p.weight || p.qty || p.quantity}</span>
+                  <span style={{ width: 40, textAlign: 'right' }}>{Number(p.total).toFixed(2)}</span>
+                </div>
+              </div>
+            ))}
+            <div style={{ borderTop: '1px dashed #222', margin: '2px 0' }} />
+            {/* Total Row */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: 12, lineHeight: 1.1 }}>
+              <span>TOTAL</span>
+              <span>{printOrder.total.toFixed(2)}</span>
+            </div>
+            {/* Items/QTY Row */}
+            <div style={{ fontSize: 11, display: 'flex', justifyContent: 'space-between', marginBottom: 1, lineHeight: 1.1 }}>
+              <span>ITEM(S)/QTY</span>
+              <span>{printOrder.items.length}/
+                {printOrder.items.reduce((sum, p) => sum + Number(p.weight || p.qty || p.quantity), 0)}</span>
+            </div>
+            <div style={{ borderTop: '1px dashed #222', margin: '2px 0' }} />
+            {/* Tendered, Cash, Redeem Points */}
+            <div style={{ fontSize: 11, display: 'flex', justifyContent: 'space-between', lineHeight: 1.1 }}>
+              <span>TENDERED</span>
+              <span>{printOrder.total.toFixed(2)}</span>
+            </div>
+            <div style={{ fontSize: 11, display: 'flex', justifyContent: 'space-between', lineHeight: 1.1 }}>
+              <span>{printOrder.paymentMethod.toUpperCase()}</span>
+              <span>{printOrder.total.toFixed(2)}</span>
+            </div>
+            <div style={{ fontSize: 11, display: 'flex', justifyContent: 'space-between', marginBottom: 1, lineHeight: 1.1 }}>
+              <span>REDEEM POINTS(OPTS)</span>
+              <span>0.00</span>
+            </div>
+            <div style={{ borderTop: '1px dashed #222', margin: '2px 0' }} />
+            {/* Footer */}
+            <div style={{ textAlign: 'center', marginTop: 4, fontSize: 11, lineHeight: 1.1 }}>
+              THANK YOU.....VIST AGAIN
             </div>
           </div>
         </div>

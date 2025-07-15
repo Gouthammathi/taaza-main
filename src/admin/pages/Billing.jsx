@@ -54,6 +54,7 @@ function Billing() {
   const [keypadType, setKeypadType] = useState('numeric');
   const [showPrintReceipt, setShowPrintReceipt] = useState(false);
   const printRef = useRef();
+  const printingRef = useRef(false); // Add this line
 
   // Calculate totals
   const totalQty = currentBill.products.reduce((sum, p) => sum + Number(p.qty), 0);
@@ -105,10 +106,12 @@ function Billing() {
 
   // Print handler
   useEffect(() => {
-    if (showPrintReceipt) {
+    if (showPrintReceipt && !printingRef.current) {
+      printingRef.current = true;
       setTimeout(() => {
         window.print();
         setShowPrintReceipt(false);
+        printingRef.current = false;
       }, 200);
     }
   }, [showPrintReceipt]);

@@ -33,7 +33,8 @@ const CategoriesManagement = () => {
     { value: 'birds', label: 'Birds' },
     { value: 'goats', label: 'Goats' },
     { value: 'eggs', label: 'Eggs' },
-    { value: 'bEggs', label: 'B.Eggs' }
+    { value: 'bEggs', label: 'B.Eggs' },
+    { value: 'masala', label: 'Masala' } // Added Masala
   ];
   // Remove subcategory modal, handlers, and related state
   // Remove openSubcategoryModal, handleSubcategorySubmit, handleDeleteSubcategory, showSubcategoryModal, subcategoryForm, subcategoryEditIndex, activeCategory, subActionMenu
