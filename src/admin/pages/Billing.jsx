@@ -808,7 +808,7 @@ function Billing() {
       )}
       {/* Printable Receipt (hidden except for print) */}
       {orderPaid && showPrintReceipt && (
-        <div ref={printRef} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', zIndex: 9999, background: 'white', padding: 0, margin: 0 }}>
+        <div id="receipt-print-area" ref={printRef} style={{ width: '100vw', zIndex: 9999, background: 'white', padding: 0, margin: 0 }}>
           <div
             style={{
               maxWidth: 300,
