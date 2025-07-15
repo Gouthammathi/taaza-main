@@ -53,11 +53,9 @@ const OrdersManagement = () => {
   useEffect(() => {
     if (showPrintReceipt && !printingRef.current) {
       printingRef.current = true;
-      setTimeout(() => {
-        window.print();
-        setShowPrintReceipt(false);
-        printingRef.current = false;
-      }, 200);
+      window.print();
+      setShowPrintReceipt(false);
+      printingRef.current = false;
     }
   }, [showPrintReceipt]);
 
