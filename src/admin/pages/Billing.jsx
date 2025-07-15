@@ -43,7 +43,6 @@ function Billing() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [allProducts, setAllProducts] = useState([]);
   const [orderPaid, setOrderPaid] = useState(null);
-  const [confirmPay, setConfirmPay] = useState(null);
   const [processing, setProcessing] = useState(false);
   const [quickItems, setQuickItems] = useState([]);
   const [showKeypad, setShowKeypad] = useState(false);
@@ -169,37 +168,37 @@ function Billing() {
   };
 
   // Payment handler (now called after confirmation)
-  const handlePay = (withReceipt) => {
-    setConfirmPay({ withReceipt });
-  };
-
-  // Actually process payment after confirmation
   const processPayment = async (withReceipt) => {
-    setConfirmPay(null);
     setProcessing(true);
-    setTimeout(async () => {
-      // Simulate order ID and details
-      const nextNumber = await getNextAdminOrderNumber();
-      const now = new Date();
-      const datePart = now.toISOString().slice(0,10).replace(/-/g, '');
-      const orderId = `ADM-${datePart}-${String(nextNumber).padStart(5, '0')}`;
-      const orderData = {
-        orderId,
-        products: currentBill.products,
-        total: amountPayable,
-        paymentMethod: selectedPayment,
-        withReceipt,
-        createdAt: new Date(),
-      };
+    // Simulate order ID and details
+    const nextNumber = await getNextAdminOrderNumber();
+    const now = new Date();
+    const datePart = now.toISOString().slice(0,10).replace(/-/g, '');
+    const orderId = `ADM-${datePart}-${String(nextNumber).padStart(5, '0')}`;
+    const orderData = {
+      orderId,
+      products: currentBill.products,
+      total: amountPayable,
+      paymentMethod: selectedPayment,
+      withReceipt,
+      createdAt: new Date(),
+    };
+    // Store in Firestore
+    try {
+      await addDoc(collection(db, 'orders'), orderData);
+    } catch (err) {
+      console.error('Error saving order to Firestore:', err);
+    }
+    setProcessing(false);
+    if (withReceipt) {
       setOrderPaid(orderData);
-      // Store in Firestore
-      try {
-        await addDoc(collection(db, 'orders'), orderData);
-      } catch (err) {
-        console.error('Error saving order to Firestore:', err);
-      }
-      setProcessing(false);
-    }, 1500);
+      setShowPrintReceipt(true);
+    } else {
+      // For no receipt, just reset bill for next transaction
+      setOrderPaid(null);
+      setCurrentBill({ ...currentBill, products: [] });
+      setProductRow({ ...initialProductRow });
+    }
   };
 
   // Add current productRow to quick items
@@ -681,14 +680,14 @@ function Billing() {
             <div className="flex gap-2">
               <button
                 className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={() => handlePay(false)}
+                onClick={() => processPayment(false)}
                 disabled={currentBill.products.length === 0}
               >
                 Pay (No Receipt)
               </button>
               <button
                 className="flex-1 py-3 bg-blue-700 text-white rounded-lg font-semibold hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={() => handlePay(true)}
+                onClick={() => processPayment(true)}
                 disabled={currentBill.products.length === 0}
               >
                 Pay & Print Receipt
@@ -697,31 +696,8 @@ function Billing() {
           </div>
         </div>
       </div>
-      {/* Payment Confirmation Popup */}
-      {confirmPay && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white p-8 rounded-xl shadow-xl max-w-sm w-full mx-4 flex flex-col items-center">
-            <div className="text-xl font-bold mb-2">Confirm Payment</div>
-            <div className="mb-4 text-center">Are you sure you want to pay <span className="font-semibold text-blue-700">₹{amountPayable.toFixed(2)}</span> by <span className="font-semibold text-blue-700">{selectedPayment}</span>?</div>
-            <div className="flex gap-4 mt-2">
-              <button
-                className="px-6 py-2 bg-gray-200 rounded hover:bg-gray-300 font-semibold"
-                onClick={() => setConfirmPay(null)}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold"
-                onClick={() => processPayment(confirmPay.withReceipt)}
-              >
-                Confirm & Pay
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       {/* Payment Processing Spinner */}
-      {processing && (
+      {/* {processing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
           <div className="bg-white p-8 rounded-xl shadow-xl flex flex-col items-center gap-4">
             <svg className="animate-spin h-10 w-10 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -731,84 +707,7 @@ function Billing() {
             <div className="text-lg font-semibold text-blue-700">Processing Payment…</div>
           </div>
         </div>
-      )}
-      {/* Centered Order Paid Popup */}
-      {orderPaid && !showPrintReceipt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white p-10 rounded-2xl shadow-2xl max-w-2xl w-full mx-4 flex flex-col gap-6">
-            <div className="flex items-center justify-center gap-3">
-              <span className="text-green-600 text-4xl">✔️</span>
-              <span className="text-2xl font-bold text-green-700">Order Paid</span>
-            </div>
-            <div className="flex flex-col md:flex-row gap-8">
-              {/* Left: Order Info */}
-              <div className="flex-1 min-w-[220px] space-y-3">
-                <div className="flex justify-between items-center border-b pb-2">
-                  <span className="text-gray-500 font-medium">Order ID:</span>
-                  <span className="font-mono text-base font-bold text-blue-700">{orderPaid.orderId}</span>
-      </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-500 font-medium">Payment:</span>
-                  <span className="font-semibold text-blue-700">{orderPaid.paymentMethod}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-500 font-medium">Receipt:</span>
-                  <span className="font-semibold">{orderPaid.withReceipt ? 'Printed' : 'Not Printed'}</span>
-                </div>
-                <div className="flex justify-between items-center border-t pt-2 mt-2">
-                  <span className="text-lg font-bold">Total:</span>
-                  <span className="text-2xl font-extrabold text-green-700">₹{orderPaid.total.toFixed(2)}</span>
-                </div>
-              </div>
-              {/* Right: Product Table */}
-              <div className="flex-1 min-w-[220px]">
-                <div className="font-semibold text-gray-700 mb-2">Products</div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm border rounded-lg overflow-hidden">
-                    <thead className="bg-gray-100">
-                      <tr>
-                        <th className="px-2 py-1 text-left">Name</th>
-                        <th className="px-2 py-1 text-center">Qty</th>
-                        <th className="px-2 py-1 text-center">Weight</th>
-                        <th className="px-2 py-1 text-right">Subtotal</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {orderPaid.products.map((p, i) => (
-                        <tr key={i} className="border-b last:border-b-0">
-                          <td className="px-2 py-1 font-medium">{p.name}</td>
-                          <td className="px-2 py-1 text-center">{p.qty}</td>
-                          <td className="px-2 py-1 text-center">{p.weight}kg</td>
-                          <td className="px-2 py-1 text-right">₹{p.total}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-              </div>
-              </div>
-            </div>
-            <button
-              className="mt-2 px-8 py-2 bg-green-600 text-white rounded-lg font-semibold text-lg hover:bg-green-700 transition block mx-auto"
-              onClick={() => {
-                setOrderPaid(null);
-                // Clear current bill's products and reset product form
-                setCurrentBill({ ...currentBill, products: [] });
-                setProductRow({ ...initialProductRow });
-              }}
-            >
-              Close
-            </button>
-            {orderPaid.withReceipt && (
-              <button
-                className="mt-2 px-8 py-2 bg-blue-600 text-white rounded-lg font-semibold text-lg hover:bg-blue-700 transition block mx-auto"
-                onClick={() => setShowPrintReceipt(true)}
-              >
-                Print Receipt
-              </button>
-            )}
-          </div>
-        </div>
-      )}
+      )} */}
       {/* Printable Receipt (hidden except for print) */}
       {orderPaid && showPrintReceipt && (
         <div id="receipt-print-area" ref={printRef} style={{ width: '100vw', zIndex: 9999, background: 'white', padding: 0, margin: 0 }}>
